@@ -42,20 +42,25 @@ img_as_int - convert to 16-bit int
 
 original_image = io.imread("./images/nits_iqa/Database/I1.bmp")
 
-plt.imshow(original_image)
-plt.show()
-
 
 image_array = []
 
 for i in range(1, 6):
-    print(i)
     image_array.append(io.imread(f"./images/nits_iqa/Database/I1D1L{i}.bmp"))
 
 
+plt.figure()
+
+f, axarr = plt.subplots(1, image_array.__len__() + 1) 
+axarr[0].imshow(original_image)
+
 for ind, image in enumerate(image_array):
     print(f"Image no. {ind + 1}: ")
+    axarr[ind + 1].imshow(image)
     print("MSE: " + str(ms.mse(original_image, image)))
     print("RMSE: " + str(ms.rmse(original_image, image)))
     print("PSNR: " + str(ms.psnr(original_image, image)))
+
+plt.show()
+
 

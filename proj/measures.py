@@ -19,3 +19,5 @@ def psnr (original_image, deformed_image):
 	return 10 * np.log10((MAX ** 2) / mse_value)
 
 
+# def ssim (original_image, deformed_image):
+
