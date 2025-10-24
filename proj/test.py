@@ -4,6 +4,7 @@ from skimage import io
 from matplotlib import pyplot as plt
 import measures as ms
 
+
 """
 
 Image data types:
@@ -49,18 +50,20 @@ for i in range(1, 6):
     image_array.append(io.imread(f"./images/nits_iqa/Database/I1D1L{i}.bmp"))
 
 
-plt.figure()
+# plt.figure()
 
-f, axarr = plt.subplots(1, image_array.__len__() + 1) 
-axarr[0].imshow(original_image)
+# f, axarr = plt.subplots(1, image_array.__len__() + 1) 
+# axarr[0].imshow(original_image)
 
-for ind, image in enumerate(image_array):
-    print(f"Image no. {ind + 1}: ")
-    axarr[ind + 1].imshow(image)
-    print("MSE: " + str(ms.mse(original_image, image)))
-    print("RMSE: " + str(ms.rmse(original_image, image)))
-    print("PSNR: " + str(ms.psnr(original_image, image)))
+# for ind, image in enumerate(image_array):
+#     print(f"Image no. {ind + 1}: ")
+#     axarr[ind + 1].imshow(image)
+#     print("MSE: " + str(ms.mse(original_image, image)))
+#     print("RMSE: " + str(ms.rmse(original_image, image)))
+#     print("PSNR: " + str(ms.psnr(original_image, image)))
 
-plt.show()
+# plt.show()
+
+print(ms.ssim(original_image, image_array[0]))
 
 
