@@ -1,6 +1,6 @@
 
 import numpy as np
-from skimage import io
+import skimage
 from matplotlib import pyplot as plt
 import measures as ms
 
@@ -41,28 +41,31 @@ img_as_int - convert to 16-bit int
 # print(ms.psnr(my_image, my_image))
 
 
-original_image = io.imread("./images/nits_iqa/Database/I1.bmp")
+original_image = skimage.io.imread("./images/nits_iqa/Database/I1.bmp")
 
 
 image_array = []
 
 for i in range(1, 6):
-    image_array.append(io.imread(f"./images/nits_iqa/Database/I1D1L{i}.bmp"))
+    image_array.append(skimage.io.imread(f"./images/nits_iqa/Database/I1D1L{i}.bmp"))
 
+print(f"\nOriginal image shape: {original_image.shape}\n")
 
 # plt.figure()
 
 # f, axarr = plt.subplots(1, image_array.__len__() + 1) 
 # axarr[0].imshow(original_image)
 
-# for ind, image in enumerate(image_array):
-#     print(f"Image no. {ind + 1}: ")
-#     axarr[ind + 1].imshow(image)
-#     print("MSE: " + str(ms.mse(original_image, image)))
-#     print("RMSE: " + str(ms.rmse(original_image, image)))
-#     print("PSNR: " + str(ms.psnr(original_image, image)))
+for ind, image in enumerate(image_array):
+    print(f"Image no. {ind + 1}: ")
+    # axarr[ind + 1].imshow(image)
+    print("MSE: " + str(ms.mse(original_image, image)))
+    print("RMSE: " + str(ms.rmse(original_image, image)))
+    print("PSNR: " + str(ms.psnr(original_image, image)))
+    print("SSIM: " + str(skimage.metrics.structural_similarity(original_image, image_array[ind], channel_axis=2)))
 
 # plt.show()
+
 
 print(ms.ssim(original_image, image_array[0]))
 
