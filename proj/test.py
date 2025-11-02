@@ -4,6 +4,7 @@ import skimage
 from matplotlib import pyplot as plt
 import measures as ms
 
+import sgessim
 
 """
 
@@ -59,14 +60,12 @@ print(f"\nOriginal image shape: {original_image.shape}\n")
 for ind, image in enumerate(image_array):
     print(f"Image no. {ind + 1}: ")
     # axarr[ind + 1].imshow(image)
-    print("MSE: " + str(ms.mse(original_image, image)))
-    print("RMSE: " + str(ms.rmse(original_image, image)))
-    print("PSNR: " + str(ms.psnr(original_image, image)))
-    print("SSIM: " + str(skimage.metrics.structural_similarity(original_image, image_array[ind], channel_axis=2)))
+    print(f"MSE: {ms.mse(original_image, image)}")
+    print(f"RMSE: {ms.rmse(original_image, image)}")
+    print(f"PSNR: {ms.psnr(original_image, image)}")
+    print(f"SSIM: {ms.ssim(original_image, image)}")
+    print(f"Skimage SSIM: {skimage.metrics.structural_similarity(original_image, image, channel_axis=2)}")
+    print(f"SG-ESSIM: {sgessim.sg_essim(original_image, image)}")
 
 # plt.show()
-
-
-print(ms.ssim(original_image, image_array[0]))
-
 
