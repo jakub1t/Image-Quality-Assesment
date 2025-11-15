@@ -1,12 +1,12 @@
 import numpy as np
 
 
-def mse (original_image, deformed_image):
-	return np.mean((original_image.astype(np.float64) - deformed_image.astype(np.float64)) ** 2)
+def mse (array1, array2):
+	return np.mean((np.subtract(array1, array2)) ** 2)
 
 
-def rmse (original_image, deformed_image):
-	return np.sqrt(mse(original_image, deformed_image))
+def rmse (array1, array2):
+	return np.sqrt(mse(array1, array2))
 
 
 def psnr (original_image, deformed_image):
