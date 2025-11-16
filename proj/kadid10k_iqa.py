@@ -57,6 +57,7 @@ def iterate_images(original_image, image_array):
 
 dataframe = pd.read_csv("./images/kadid10k/dmos.csv", sep=",")
 
+dmos_values = dataframe["dmos"].values
 
 original_images = []
 NUMBER_OF_ORIGINAL_IMAGES = 81
@@ -95,22 +96,22 @@ print(f"Time elapsed for processing: {time_end - time_start:.2f} seconds\n")
 
 
 # Pearson’s linear correlation coefficient
-pearson_coefficient, pe_p_value = scipy.stats.pearsonr(ssim_values, sg_essim_values)
+pearson_coefficient, pe_p_value = scipy.stats.pearsonr(dmos_values, sg_essim_values)
 
 pearson_coefficient = np.round(pearson_coefficient, 3)
 
 # Spearman’s rank-order correlation coefficient 
-spearman_coefficient, sp_p_value = scipy.stats.spearmanr(ssim_values, sg_essim_values)
+spearman_coefficient, sp_p_value = scipy.stats.spearmanr(dmos_values, sg_essim_values)
 
 spearman_coefficient = np.round(spearman_coefficient, 3)
 
 # Kendall’s rank order correlation coefficient
-kendall_coefficient, ke_p_value = scipy.stats.kendalltau(ssim_values, sg_essim_values)
+kendall_coefficient, ke_p_value = scipy.stats.kendalltau(dmos_values, sg_essim_values)
 
 kendall_coefficient = np.round(kendall_coefficient, 3)
 
 # Root mean square error
-rmse = ms.rmse(ssim_values, sg_essim_values)
+rmse = ms.rmse(dmos_values, sg_essim_values)
 
 rmse = np.round(rmse, 3)
 
@@ -134,6 +135,8 @@ dataframe["ssim"] = pd.Series(ssim_values)
 dataframe["sg_essim"] = pd.Series(sg_essim_values)
 
 
-print(f"Dataframe after iteration:\n {dataframe.head(50)}")
+print(f"Dataframe after iteration:\n {dataframe.head(50)}\n\n")
+
+print(f"DMOS: {dmos_values}\n")
 
 dataframe.to_csv("./result_kadid10k_iqa.csv", sep='\t', encoding='utf-8', index=False, header=True)

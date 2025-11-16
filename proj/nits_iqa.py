@@ -67,6 +67,8 @@ dataframe = pd.read_excel("./images/nits_iqa/Database/Score.xlsx", sheet_name="S
 dataframe = dataframe.sort_values(by=["Original Image Name", "Distorted Image Name"])
 dataframe = dataframe.reset_index(drop=True)
 
+mos_values = dataframe["Score"].values
+
 
 original_images = []
 NUMBER_OF_ORIGINAL_IMAGES = 9
@@ -98,25 +100,23 @@ for j in range(1, NUMBER_OF_ORIGINAL_IMAGES + 1):
 time_end = timeit.default_timer()
 print(f"Time elapsed for processing: {time_end - time_start:.2f} seconds\n")
 
-print(sg_essim_values)
-
 # Pearson’s linear correlation coefficient
-pearson_coefficient, pe_p_value = scipy.stats.pearsonr(ssim_values, sg_essim_values)
+pearson_coefficient, pe_p_value = scipy.stats.pearsonr(mos_values, sg_essim_values)
 
 pearson_coefficient = np.round(pearson_coefficient, 3)
 
 # Spearman’s rank-order correlation coefficient 
-spearman_coefficient, sp_p_value = scipy.stats.spearmanr(ssim_values, sg_essim_values)
+spearman_coefficient, sp_p_value = scipy.stats.spearmanr(mos_values, sg_essim_values)
 
 spearman_coefficient = np.round(spearman_coefficient, 3)
 
 # Kendall’s rank order correlation coefficient
-kendall_coefficient, ke_p_value = scipy.stats.kendalltau(ssim_values, sg_essim_values)
+kendall_coefficient, ke_p_value = scipy.stats.kendalltau(mos_values, sg_essim_values)
 
 kendall_coefficient = np.round(kendall_coefficient, 3)
 
 # Root mean square error
-rmse = ms.rmse(ssim_values, sg_essim_values)
+rmse = ms.rmse(mos_values, sg_essim_values)
 
 rmse = np.round(rmse, 3)
 
@@ -139,6 +139,8 @@ dataframe["ssim"] = pd.Series(ssim_values)
 dataframe["sg_essim"] = pd.Series(sg_essim_values)
 
 
-print(f"Dataframe after iteration:\n {dataframe.head(50)}")
+print(f"Dataframe after iteration:\n {dataframe.head(50)}\n\n")
+
+print(f"MOS: {mos_values}\n")
 
 dataframe.to_csv("./result_nits_iqa.csv", sep='\t', encoding='utf-8', index=False, header=True)
