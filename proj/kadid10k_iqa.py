@@ -1,6 +1,5 @@
 
 import timeit
-import itertools
 import skimage
 import scipy
 import pandas as pd
@@ -8,63 +7,22 @@ import numpy as np
 
 import measures as ms
 import sgessim
+import utils
 
 
-def iterate_images(original_image, image_array):
-    
-    image_list = image_array.files
+NUMBER_OF_ORIGINAL_IMAGES = 81
 
-    mse_list = []
-    psnr_list = []
-    ssim_list = []
-    sg_essim_list = []
-
-    mini = 1.0
-    image_n = ""
-
-    for image, image_name in itertools.zip_longest(image_array, image_list):
-        print(f"Image: {image_name}")
-        
-        mse = np.round(ms.mse(original_image, image), 3)
-        mse_list.append(mse)
-        # print(f"MSE: {mse}")
-
-        psnr = np.round(ms.psnr(original_image, image), 3)
-        psnr_list.append(psnr)
-        # print(f"PSNR: {psnr}")
-
-        ssim = np.round(skimage.metrics.structural_similarity(original_image, image, channel_axis=2), 3)
-        ssim_list.append(ssim)
-        print(f"SSIM: {ssim}")
-
-        sg_essim = np.round(sgessim.sg_essim(original_image, image, K=51000), 3)
-        sg_essim_list.append(sg_essim)
-        print(f"SG-ESSIM: {sg_essim}")
-
-        if sg_essim < mini:
-            mini = sg_essim
-            image_n = image_name
-        
-        print("\n")
-
-    print(f"Min SG-ESSIM: {mini} for image: {image_n}\n")
-
-    return mse_list, psnr_list, ssim_list, sg_essim_list
-
-
+original_images = []
+mse_values = []
+psnr_values = [] 
+ssim_values = []
+sg_essim_values = []
 
 
 
 dataframe = pd.read_csv("./images/kadid10k/dmos.csv", sep=",")
 
 dmos_values = dataframe["dmos"].values
-
-original_images = []
-NUMBER_OF_ORIGINAL_IMAGES = 81
-mse_values = []
-psnr_values = [] 
-ssim_values = []
-sg_essim_values = []
 
 
 for i in range(1, NUMBER_OF_ORIGINAL_IMAGES + 1):
@@ -85,7 +43,7 @@ for j in range(1, NUMBER_OF_ORIGINAL_IMAGES + 1):
     else:
         image_collection = skimage.io.imread_collection(f"./images/kadid10k/images/I{j}_*.png", conserve_memory=True)
 
-    mse_v, psnr_v, ssim_v, sg_essim_v = iterate_images(original_images[j - 1], image_collection)
+    mse_v, psnr_v, ssim_v, sg_essim_v = utils.iterate_images(original_images[j - 1], image_collection)
     mse_values.extend(mse_v)
     psnr_values.extend(psnr_v)
     ssim_values.extend(ssim_v)
@@ -95,29 +53,12 @@ time_end = timeit.default_timer()
 print(f"Time elapsed for processing: {time_end - time_start:.2f} seconds\n")
 
 
-# Pearson’s linear correlation coefficient
-pearson_coefficient, pe_p_value = scipy.stats.pearsonr(dmos_values, sg_essim_values)
 
-pearson_coefficient = np.round(pearson_coefficient, 3)
+plcc, srocc, krocc, rmse = utils.get_coefficients(dmos_values, sg_essim_values)
 
-# Spearman’s rank-order correlation coefficient 
-spearman_coefficient, sp_p_value = scipy.stats.spearmanr(dmos_values, sg_essim_values)
-
-spearman_coefficient = np.round(spearman_coefficient, 3)
-
-# Kendall’s rank order correlation coefficient
-kendall_coefficient, ke_p_value = scipy.stats.kendalltau(dmos_values, sg_essim_values)
-
-kendall_coefficient = np.round(kendall_coefficient, 3)
-
-# Root mean square error
-rmse = ms.rmse(dmos_values, sg_essim_values)
-
-rmse = np.round(rmse, 3)
-
-print(f"\n===================\nPLCC: {pearson_coefficient}\n===================\n")
-print(f"\n===================\nSROCC: {spearman_coefficient}\n===================\n")
-print(f"\n===================\nKROCC: {kendall_coefficient}\n===================\n")
+print(f"\n===================\nPLCC: {plcc}\n===================\n")
+print(f"\n===================\nSROCC: {srocc}\n===================\n")
+print(f"\n===================\nKROCC: {krocc}\n===================\n")
 print(f"\n===================\nRMSE: {rmse}\n===================\n")
 
 
@@ -136,7 +77,5 @@ dataframe["sg_essim"] = pd.Series(sg_essim_values)
 
 
 print(f"Dataframe after iteration:\n {dataframe.head(50)}\n\n")
-
-print(f"DMOS: {dmos_values}\n")
 
 dataframe.to_csv("./result_kadid10k_iqa.csv", sep='\t', encoding='utf-8', index=False, header=True)
