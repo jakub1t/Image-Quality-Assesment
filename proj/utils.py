@@ -3,13 +3,14 @@ import itertools
 import skimage
 import scipy
 import numpy as np
+import pandas as pd
 
 import measures as ms
 import sgessim
 
 
 
-def iterate_images(original_image, image_array):
+def iterate_images(reference_image, image_array, console_log=False):
     
     image_list = image_array.files
 
@@ -20,25 +21,27 @@ def iterate_images(original_image, image_array):
 
 
     for image, image_name in itertools.zip_longest(image_array, image_list):
-        print(f"Image: {image_name}")
         
-        mse = np.round(ms.mse(original_image, image), 3)
+        mse = np.round(ms.mse(reference_image, image), 3)
         mse_list.append(mse)
-        # print(f"MSE: {mse}")
 
-        psnr = np.round(ms.psnr(original_image, image), 3)
+        psnr = np.round(ms.psnr(reference_image, image), 3)
         psnr_list.append(psnr)
-        # print(f"PSNR: {psnr}")
 
-        ssim = np.round(skimage.metrics.structural_similarity(original_image, image, channel_axis=2), 3)
+        ssim = np.round(skimage.metrics.structural_similarity(reference_image, image, channel_axis=2), 3)
         ssim_list.append(ssim)
-        print(f"SSIM: {ssim}")
 
-        sg_essim = np.round(sgessim.sg_essim(original_image, image), 3)
+        sg_essim = np.round(sgessim.sg_essim(reference_image, image), 3)
         sg_essim_list.append(sg_essim)
-        print(f"SG-ESSIM: {sg_essim}")
         
-        print("\n")
+        if console_log == True:
+            print(f"Image: {image_name}")
+            print(f"MSE: {mse}")
+            print(f"PSNR: {psnr}")
+            print(f"SSIM: {ssim}")
+            print(f"SG-ESSIM: {sg_essim}")
+        
+            print("\n")
 
     return mse_list, psnr_list, ssim_list, sg_essim_list
 
@@ -66,3 +69,14 @@ def get_coefficients(array1, array2):
     rmse_error = np.round(rmse_error, 3)
 
     return pearson_coefficient, spearman_coefficient, kendall_coefficient, rmse_error
+
+
+def save_values_to_df(df, **kwargs):
+
+    df.insert(len(df.columns), " ", " ", False)
+
+    for key, value in kwargs.items():
+        df.insert(len(df.columns), key, "NaN", False)
+        df[key] = pd.Series(value)
+
+    return df
