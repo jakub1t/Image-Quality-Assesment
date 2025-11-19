@@ -1,5 +1,6 @@
-import scipy
-import cv2
+
+from scipy import ndimage
+from scipy import signal
 import numpy as np
 
 
@@ -23,9 +24,10 @@ def automatic_downsampling(reference_image, deformed_image):
 
     if f > 1:
         low_pass_filter = np.ones((f, f), dtype=np.float64)
+        low_pass_filter /= low_pass_filter.sum()
 
-        reference_image = cv2.filter2D(reference_image, -1, low_pass_filter)
-        deformed_image = cv2.filter2D(deformed_image, -1, low_pass_filter)
+        reference_image = ndimage.convolve(reference_image, low_pass_filter, mode='reflect')
+        deformed_image = ndimage.convolve(deformed_image, low_pass_filter, mode='reflect')
 
         reference_image = reference_image[::f, ::f]
         deformed_image = deformed_image[::f, ::f]
@@ -59,10 +61,10 @@ def get_directional_gradient(image):
 
     kernel4 = np.rot90(kernel3)
 
-    gradient[:, :, 0] = scipy.signal.convolve2d(image, kernel1, mode='same', boundary='symm')
-    gradient[:, :, 1] = scipy.signal.convolve2d(image, kernel2, mode='same', boundary='symm')
-    gradient[:, :, 2] = scipy.signal.convolve2d(image, kernel3, mode='same', boundary='symm')
-    gradient[:, :, 3] = scipy.signal.convolve2d(image, kernel4, mode='same', boundary='symm')
+    gradient[:, :, 0] = signal.correlate2d(image, kernel1, mode='same', boundary='fill', fillvalue=0)
+    gradient[:, :, 1] = signal.correlate2d(image, kernel2, mode='same', boundary='fill', fillvalue=0)
+    gradient[:, :, 2] = signal.correlate2d(image, kernel3, mode='same', boundary='fill', fillvalue=0)
+    gradient[:, :, 3] = signal.correlate2d(image, kernel4, mode='same', boundary='fill', fillvalue=0)
 
     return gradient
 
@@ -82,7 +84,6 @@ def sg_essim(reference_image, deformed_image, h = 0.5, L = 255, K = 200):
     grad_ref = np.abs(ref_gradient[:, :, [0, 2]] - ref_gradient[:, :, [1, 3]]) ** 0.5
     grad_def = np.abs(def_gradient[:, :, [0, 2]] - def_gradient[:, :, [1, 3]]) ** 0.5
 
-    # meshgrid in MATLAB -> X=row indices, Y=col indices
     Y, X = np.meshgrid(np.arange(n_cols), np.arange(n_rows))
 
     # max along gradient directions
@@ -90,15 +91,14 @@ def sg_essim(reference_image, deformed_image, h = 0.5, L = 255, K = 200):
 
     ind = (X.ravel() * n_cols * 2 + Y.ravel() * 2 + ind3.ravel())
 
-    # Flatten grad arrays to use flat indices
-    grad_ref_flat = grad_ref.reshape(-1, 2)
-    grad_def_flat = grad_def.reshape(-1, 2)
+    grad_ref_sel = grad_ref.ravel()[ind]
+    grad_def_sel = grad_def.ravel()[ind]
 
-    edgeMap = np.maximum(grad_ref_flat.ravel()[ind], grad_def_flat.ravel()[ind])
+    edgeMap = np.maximum(grad_ref_sel, grad_def_sel)
 
     H = C * np.exp(-edgeMap / h)
 
-    SM = (2 * grad_ref_flat.ravel()[ind] * grad_def_flat.ravel()[ind] + H) / (grad_ref_flat.ravel()[ind]**2 + grad_def_flat.ravel()[ind]**2 + H)
+    SM = (2 * grad_ref_sel * grad_def_sel + H) / (grad_ref_sel**2 + grad_def_sel**2 + H)
 
     quality = np.mean(SM)
 
