@@ -52,11 +52,26 @@ print(f"Time elapsed for processing: {time_end - time_start:.2f} seconds\n")
 
 plcc, srocc, krocc, rmse = utils.get_coefficients(dmos_values, sg_essim_values)
 
+print(f"=======================================================\n")
+print(f"=======================SG-ESSIM========================\n")
+print(f"=======================================================\n")
+
 print(f"\n===================\nPLCC: {plcc}\n===================\n")
 print(f"\n===================\nSROCC: {srocc}\n===================\n")
 print(f"\n===================\nKROCC: {krocc}\n===================\n")
 print(f"\n===================\nRMSE: {rmse}\n===================\n")
 
+
+plcc, srocc, krocc, rmse = utils.get_coefficients(dmos_values, ssim_values)
+
+print(f"=======================================================\n")
+print(f"=======================SSIM========================\n")
+print(f"=======================================================\n")
+
+print(f"\n===================\nPLCC: {plcc}\n===================\n")
+print(f"\n===================\nSROCC: {srocc}\n===================\n")
+print(f"\n===================\nKROCC: {krocc}\n===================\n")
+print(f"\n===================\nRMSE: {rmse}\n===================\n")
 
 value_dictionary = {
     "mse": mse_values,

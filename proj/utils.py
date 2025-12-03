@@ -7,6 +7,7 @@ import pandas as pd
 
 import measures as ms
 import sgessim
+import ffs
 
 
 
@@ -18,21 +19,25 @@ def iterate_images(reference_image, image_array, console_log=False):
     psnr_list = []
     ssim_list = []
     sg_essim_list = []
+    ffs_list = []
 
 
     for image, image_name in itertools.zip_longest(image_array, image_list):
         
-        mse = np.round(ms.mse(reference_image, image), 3)
+        mse = ms.mse(reference_image, image) # np.round(ms.mse(reference_image, image), 3)
         mse_list.append(mse)
 
-        psnr = np.round(ms.psnr(reference_image, image), 3)
+        psnr = ms.psnr(reference_image, image) # np.round(ms.psnr(reference_image, image), 3)
         psnr_list.append(psnr)
 
-        ssim = np.round(skimage.metrics.structural_similarity(reference_image, image, channel_axis=2), 3)
+        ssim = skimage.metrics.structural_similarity(reference_image, image, channel_axis=2) # np.round(skimage.metrics.structural_similarity(reference_image, image, channel_axis=2), 3)
         ssim_list.append(ssim)
 
-        sg_essim = np.round(sgessim.sg_essim(reference_image, image), 3)
+        sg_essim = sgessim.sg_essim(reference_image, image) # np.round(sgessim.sg_essim(reference_image, image), 3)
         sg_essim_list.append(sg_essim)
+
+        ffs_ = ffs.calculate_ffs(reference_image, image)
+        ffs_list.append(ffs_)
         
         if console_log == True:
             print(f"Image: {image_name}")
@@ -40,10 +45,11 @@ def iterate_images(reference_image, image_array, console_log=False):
             print(f"PSNR: {psnr}")
             print(f"SSIM: {ssim}")
             print(f"SG-ESSIM: {sg_essim}")
+            print(f"FFS: {ffs_}")
         
             print("\n")
 
-    return mse_list, psnr_list, ssim_list, sg_essim_list
+    return mse_list, psnr_list, ssim_list, sg_essim_list, ffs_list
 
 
 def get_coefficients(array1, array2):

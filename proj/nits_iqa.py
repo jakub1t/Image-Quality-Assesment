@@ -13,6 +13,7 @@ mse_values = []
 psnr_values = [] 
 ssim_values = []
 sg_essim_values = []
+ffs_values = []
 
 
 # my_image = io.imread("./images/img100.jpg")
@@ -43,17 +44,44 @@ for j in range(1, NUMBER_OF_REFERENCE_IMAGES + 1):
     print(f"Collection no.: {j}")
     image_collection = skimage.io.imread_collection(f"./images/nits_iqa/Database/I{j}D*.bmp", conserve_memory=True)
 
-    mse_v, psnr_v, ssim_v, sg_essim_v = utils.iterate_images(reference_images[j - 1], image_collection, console_log=True)
+    mse_v, psnr_v, ssim_v, sg_essim_v, ffs_v = utils.iterate_images(reference_images[j - 1], image_collection, console_log=True)
     mse_values.extend(mse_v)
     psnr_values.extend(psnr_v)
     ssim_values.extend(ssim_v)
     sg_essim_values.extend(sg_essim_v)
+    ffs_values.extend(ffs_v)
 
 time_end = timeit.default_timer()
 print(f"Time elapsed for processing: {time_end - time_start:.2f} seconds\n")
 
 
 plcc, srocc, krocc, rmse = utils.get_coefficients(mos_values, sg_essim_values)
+
+print(f"=======================================================\n")
+print(f"=======================SG-ESSIM========================\n")
+print(f"=======================================================\n")
+
+print(f"\n===================\nPLCC: {plcc}\n===================\n")
+print(f"\n===================\nSROCC: {srocc}\n===================\n")
+print(f"\n===================\nKROCC: {krocc}\n===================\n")
+print(f"\n===================\nRMSE: {rmse}\n===================\n")
+
+plcc, srocc, krocc, rmse = utils.get_coefficients(mos_values, ffs_values)
+
+print(f"=======================================================\n")
+print(f"=========================FFS===========================\n")
+print(f"=======================================================\n")
+
+print(f"\n===================\nPLCC: {plcc}\n===================\n")
+print(f"\n===================\nSROCC: {srocc}\n===================\n")
+print(f"\n===================\nKROCC: {krocc}\n===================\n")
+print(f"\n===================\nRMSE: {rmse}\n===================\n")
+
+plcc, srocc, krocc, rmse = utils.get_coefficients(mos_values, ssim_values)
+
+print(f"=======================================================\n")
+print(f"=======================SSIM========================\n")
+print(f"=======================================================\n")
 
 print(f"\n===================\nPLCC: {plcc}\n===================\n")
 print(f"\n===================\nSROCC: {srocc}\n===================\n")
@@ -65,7 +93,8 @@ value_dictionary = {
     "mse": mse_values,
     "psnr": psnr_values,
     "ssim": ssim_values,
-    "sg_essim": sg_essim_values
+    "sg_essim": sg_essim_values,
+    "ffs": ffs_values
 }
 
 new_df = utils.save_values_to_df(dataframe, **value_dictionary)
