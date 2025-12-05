@@ -22,7 +22,7 @@ class KADID10K_DB(ImageDatabase):
         self.mos_values = self.df["dmos"].values
     
     
-    def read_images(self):
+    def load_images(self):
         for i in range(1, self.number_of_reference_images + 1):
             if i < 10:
                 ref_image = imread(f"./images/kadid10k/images/I0{i}.png")
@@ -31,22 +31,11 @@ class KADID10K_DB(ImageDatabase):
             self.reference_images.append(ref_image)
 
 
-    def calculate_quality_values(self):
-        time_start = default_timer()
-
+    def load_and_get_deformed_image_collections(self):
         for j in range(1, self.number_of_reference_images + 1):
-            print(f"Collection no.: {j}")
             if j < 10:
                 image_collection = imread_collection(f"./images/kadid10k/images/I0{j}_*.png", conserve_memory=True)
             else:
                 image_collection = imread_collection(f"./images/kadid10k/images/I{j}_*.png", conserve_memory=True)
+            self.deformed_image_collections.append(image_collection)
 
-            mse_v, psnr_v, ssim_v, sg_essim_v, ffs_v = iterate_images(self.reference_images[j - 1], image_collection, console_log=True)
-            self.mse_values.extend(mse_v)
-            self.psnr_values.extend(psnr_v)
-            self.ssim_values.extend(ssim_v)
-            self.sg_essim_values.extend(sg_essim_v)
-            self.ffs_values.extend(ffs_v)
-
-        time_end = default_timer()
-        print(f"Time elapsed for processing: {time_end - time_start:.2f} seconds\n")

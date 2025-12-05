@@ -1,6 +1,7 @@
 
+from timeit import default_timer
 
-from utils import save_values_to_df, get_coefficients
+from utils import save_values_to_df, get_coefficients, iterate_images
 
 
 class ImageDatabase:
@@ -9,6 +10,7 @@ class ImageDatabase:
     df = None
     mos_values = []
     reference_images = []
+    deformed_image_collections = []
 
     mse_values = []
     psnr_values = [] 
@@ -33,12 +35,28 @@ class ImageDatabase:
         print("Read data for database images...")
     
     
-    def read_images(self):
+    def load_images(self):
         print("Read reference images from database...")
 
 
+    def load_and_get_deformed_image_collections():
+        print("Read deformed images from database")
+
+
     def calculate_quality_values(self):
-        print("Read deformed images from database, measure time execution and calculate quality measures...")
+        time_start = default_timer()
+
+        for j, image_collection in enumerate(self.deformed_image_collections):
+
+            mse_v, psnr_v, ssim_v, sg_essim_v, ffs_v = iterate_images(self.reference_images[j], image_collection, console_log=True)
+            self.mse_values.extend(mse_v)
+            self.psnr_values.extend(psnr_v)
+            self.ssim_values.extend(ssim_v)
+            self.sg_essim_values.extend(sg_essim_v)
+            self.ffs_values.extend(ffs_v)
+
+        time_end = default_timer()
+        print(f"Time elapsed for processing: {time_end - time_start:.2f} seconds\n")
 
 
     def calculate_coefficients(self):
@@ -67,7 +85,8 @@ class ImageDatabase:
 
     def calculate_everything(self, csv_name):
         self.read_image_data()
-        self.read_images()
+        self.load_images()
+        self.load_and_get_deformed_image_collections()
         self.calculate_quality_values()
         self.calculate_coefficients()
         self.save_to_csv(csv_name=csv_name)

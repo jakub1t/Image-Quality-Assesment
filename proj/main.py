@@ -1,4 +1,4 @@
-from skimage.io import imread, show, imshow
+# from skimage.io import imread, show, imshow
 
 from nits_db import NITS_DB
 from kadid10k_db import KADID10K_DB
@@ -12,8 +12,8 @@ def main():
     # db = NITS_DB("database")
     # db.calculate_everything("result_nits_iqa")
 
-    # db = KADID10K_DB("database")
-    # db.calculate_everything("result_kadid10k_iqa")
+    db = KADID10K_DB("database")
+    db.calculate_everything("result_kadid10k_iqa")
 
 
     # ref_image = imread("./images/nits_iqa/Database/I1.bmp")
