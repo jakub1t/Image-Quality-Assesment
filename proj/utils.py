@@ -1,10 +1,11 @@
 
 import numpy as np
 from pandas import Series
-from itertools import zip_longest
+from itertools import zip_longest, repeat
 from skimage.metrics import structural_similarity
 from scipy.stats import pearsonr, spearmanr, kendalltau
-from scipy import ndimage
+
+from concurrent.futures import ProcessPoolExecutor
 
 from sgessim import sg_essim
 from ffs import calculate_ffs
@@ -23,43 +24,51 @@ def psnr (reference_image, deformed_image):
 	return 10 * np.log10((MAX ** 2) / mse_value)
 
 
+def calculate_quality_from_measures(reference_image, image):
+        
+    mse_val = mse(reference_image, image)
+
+    psnr_val = psnr(reference_image, image)
+
+    ssim_val = structural_similarity(reference_image, image, channel_axis=2)
+
+    sg_essim_val = sg_essim(reference_image, image)
+
+    ffs_val = calculate_ffs(reference_image, image)
+        
+
+    return mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val
+
+
 def iterate_images(reference_image, image_array, console_log=False):
     
     image_list = image_array.files
-
+    
     mse_list = []
     psnr_list = []
     ssim_list = []
     sg_essim_list = []
     ffs_list = []
 
+    with ProcessPoolExecutor() as executor:
+        for i, result in enumerate(executor.map(calculate_quality_from_measures, repeat(reference_image), image_array)):
+            mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val = result
+            mse_list.append(mse_val)
+            psnr_list.append(psnr_val)
+            ssim_list.append(ssim_val)
+            sg_essim_list.append(sg_essim_val)
+            ffs_list.append(ffs_val)
 
-    for image, image_name in zip_longest(image_array, image_list):
-        
-        mse_val = mse(reference_image, image)
-        mse_list.append(mse_val)
-
-        psnr_val = psnr(reference_image, image)
-        psnr_list.append(psnr_val)
-
-        ssim_val = structural_similarity(reference_image, image, channel_axis=2)
-        ssim_list.append(ssim_val)
-
-        sg_essim_val = sg_essim(reference_image, image)
-        sg_essim_list.append(sg_essim_val)
-
-        ffs_val = calculate_ffs(reference_image, image)
-        ffs_list.append(ffs_val)
-        
-        if console_log == True:
-            print(f"Image: {image_name}")
-            print(f"MSE: {mse_val}")
-            print(f"PSNR: {psnr_val}")
-            print(f"SSIM: {ssim_val}")
-            print(f"SG-ESSIM: {sg_essim_val}")
-            print(f"FFS: {ffs_val}")
-        
-            print("\n")
+            if console_log == True:
+                print(result)
+                print(f"Image: {image_list[i]}")
+                print(f"MSE: {mse_val}")
+                print(f"PSNR: {psnr_val}")
+                print(f"SSIM: {ssim_val}")
+                print(f"SG-ESSIM: {sg_essim_val}")
+                print(f"FFS: {ffs_val}")
+            
+                print("\n")
 
     return mse_list, psnr_list, ssim_list, sg_essim_list, ffs_list
 

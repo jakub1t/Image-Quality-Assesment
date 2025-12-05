@@ -7,6 +7,8 @@ from utils import save_values_to_df, get_coefficients, iterate_images
 class ImageDatabase:
 
     number_of_reference_images = 9
+    number_of_processes = 1
+
     df = None
     mos_values = []
     reference_images = []
@@ -44,6 +46,7 @@ class ImageDatabase:
 
 
     def calculate_quality_values(self):
+
         time_start = default_timer()
 
         for j, image_collection in enumerate(self.deformed_image_collections):
@@ -56,7 +59,7 @@ class ImageDatabase:
             self.ffs_values.extend(ffs_v)
 
         time_end = default_timer()
-        print(f"Time elapsed for processing: {time_end - time_start:.2f} seconds\n")
+        print(f"\nTime elapsed for processing: {time_end - time_start:.2f} seconds\n")
 
 
     def calculate_coefficients(self):

@@ -12,6 +12,11 @@ def main():
     # db = NITS_DB("database")
     # db.calculate_everything("result_nits_iqa")
 
+    # db.load_images()
+    # db.load_and_get_deformed_image_collections()
+    # db.calculate_quality_values()
+
+
     db = KADID10K_DB("database")
     db.calculate_everything("result_kadid10k_iqa")
 
