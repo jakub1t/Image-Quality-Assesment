@@ -3,14 +3,12 @@
 from nits_db import NITS_DB
 from kadid10k_db import KADID10K_DB
 
-from utils import mse
-
 
 def main():
     print("Main script started...\n")
 
     db = NITS_DB("database")
-    db.calculate_everything("result_nits_iqa")
+    db.perform_iqa("result_nits_iqa")
 
     # db.load_images()
     # db.load_and_get_deformed_image_collections()
@@ -18,7 +16,7 @@ def main():
 
 
     # db = KADID10K_DB("database")
-    # db.calculate_everything("result_kadid10k_iqa")
+    # db.perform_iqa("result_kadid10k_iqa")
 
 
     # ref_image = imread("./images/nits_iqa/Database/I1.bmp")

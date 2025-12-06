@@ -1,8 +1,14 @@
 
+import numpy as np
 from timeit import default_timer
+from concurrent.futures import ProcessPoolExecutor
+from itertools import repeat
+from pandas import Series
 
-from utils import save_values_to_df, get_coefficients, iterate_images
-
+from scipy.stats import pearsonr, spearmanr, kendalltau
+from skimage.metrics import structural_similarity
+from sgessim import sg_essim
+from ffs import calculate_ffs
 
 class ImageDatabase:
 
@@ -33,16 +39,25 @@ class ImageDatabase:
         self.db_name = db_name
     
 
+    def perform_iqa(self, csv_name):
+        self.read_image_data()
+        self.load_images()
+        self.load_and_get_deformed_image_collections()
+        self.calculate_quality_values()
+        self.calculate_coefficients()
+        self.save_to_csv(csv_name=csv_name)
+    
+
     def read_image_data(self):
-        print("Read data for database images...")
+        print("Read data (MOS/DMOS) for database images...")
     
     
     def load_images(self):
-        print("Read reference images from database...")
+        print("Read reference images from database into array...")
 
 
     def load_and_get_deformed_image_collections():
-        print("Read deformed images from database")
+        print("Read deformed images from database into array of collections...")
 
 
     def calculate_quality_values(self):
@@ -51,7 +66,7 @@ class ImageDatabase:
 
         for j, image_collection in enumerate(self.deformed_image_collections):
 
-            mse_v, psnr_v, ssim_v, sg_essim_v, ffs_v = iterate_images(self.reference_images[j], image_collection, console_log=True)
+            mse_v, psnr_v, ssim_v, sg_essim_v, ffs_v = self.iterate_images(self.reference_images[j], image_collection, console_log=True)
             self.mse_values.extend(mse_v)
             self.psnr_values.extend(psnr_v)
             self.ssim_values.extend(ssim_v)
@@ -66,7 +81,7 @@ class ImageDatabase:
 
         for quality_name, quality_values in self.quality_measures_dictionary.items():
 
-            plcc, srocc, krocc = get_coefficients(self.mos_values, quality_values)
+            plcc, srocc, krocc = self.get_coefficients(self.mos_values, quality_values)
 
             print(f"=======================================================")
             print(f"======================={quality_name}========================")
@@ -79,21 +94,102 @@ class ImageDatabase:
 
     def save_to_csv(self, csv_name):
 
-        new_df = save_values_to_df(self.df, **self.quality_measures_dictionary)
+        new_df = self.save_values_to_df(self.df, **self.quality_measures_dictionary)
 
         print(f"Dataframe after iteration:\n {new_df.head(50)}\n\n")
 
         new_df.to_csv(f"./{csv_name}.csv", sep='\t', encoding='utf-8', index=False, header=True)
-    
-
-    def calculate_everything(self, csv_name):
-        self.read_image_data()
-        self.load_images()
-        self.load_and_get_deformed_image_collections()
-        self.calculate_quality_values()
-        self.calculate_coefficients()
-        self.save_to_csv(csv_name=csv_name)
 
 
+    def calculate_quality_from_measures(reference_image, image):
+            
+        mse_val = mse(reference_image, image)
 
+        psnr_val = psnr(reference_image, image)
+
+        ssim_val = structural_similarity(reference_image, image, channel_axis=2)
+
+        sg_essim_val = sg_essim(reference_image, image)
+
+        ffs_val = calculate_ffs(reference_image, image)
+            
+
+        return mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val
+
+
+    def iterate_images(self, reference_image, image_array, console_log=False):
+        
+        image_list = image_array.files
+        
+        mse_list = []
+        psnr_list = []
+        ssim_list = []
+        sg_essim_list = []
+        ffs_list = []
+
+        with ProcessPoolExecutor() as executor:
+            for i, result in enumerate(executor.map(ImageDatabase.calculate_quality_from_measures, repeat(reference_image), image_array)):
+                mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val = result
+                mse_list.append(mse_val)
+                psnr_list.append(psnr_val)
+                ssim_list.append(ssim_val)
+                sg_essim_list.append(sg_essim_val)
+                ffs_list.append(ffs_val)
+
+                if console_log == True:
+                    print(result)
+                    print(f"Image: {image_list[i]}")
+                    print(f"MSE: {mse_val}")
+                    print(f"PSNR: {psnr_val}")
+                    print(f"SSIM: {ssim_val}")
+                    print(f"SG-ESSIM: {sg_essim_val}")
+                    print(f"FFS: {ffs_val}")
+                
+                    print("\n")
+
+        return mse_list, psnr_list, ssim_list, sg_essim_list, ffs_list
+
+
+    def get_coefficients(self, array1, array2):
+
+        # Pearson’s linear correlation coefficient
+        pearson_coefficient, _ = pearsonr(array1, array2)
+
+        pearson_coefficient = np.round(pearson_coefficient, 3)
+
+        # Spearman’s rank-order correlation coefficient 
+        spearman_coefficient, _ = spearmanr(array1, array2)
+
+        spearman_coefficient = np.round(spearman_coefficient, 3)
+
+        # Kendall’s rank order correlation coefficient
+        kendall_coefficient, _ = kendalltau(array1, array2)
+
+        kendall_coefficient = np.round(kendall_coefficient, 3)
+
+        return pearson_coefficient, spearman_coefficient, kendall_coefficient
+
+
+    def save_values_to_df(self, df, **kwargs):
+
+        df.insert(len(df.columns), " ", " ", False)
+
+        for key, value in kwargs.items():
+            df.insert(len(df.columns), key, "NaN", False)
+            df[key] = Series(value)
+
+        return df
+
+
+def mse (array1, array2):
+	return np.mean((np.subtract(array1, array2)) ** 2)
+
+
+def psnr (reference_image, deformed_image):
+	MAX = np.iinfo(reference_image.dtype).max #maximum value of datarange calculated using image data type
+
+	mse_value = mse(reference_image, deformed_image)
+	if mse_value == 0.:
+		return np.inf
+	return 10 * np.log10((MAX ** 2) / mse_value)
 

@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.signal import convolve2d
-from scipy.ndimage import gaussian_filter, correlate, zoom, convolve
+from scipy.ndimage import gaussian_filter, zoom, convolve
 from skimage.exposure import rescale_intensity
 
 def conv2(x, y, mode='same'):

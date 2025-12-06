@@ -1,9 +1,6 @@
 
 from pandas import read_csv
 from skimage.io import imread, imread_collection
-from timeit import default_timer
-
-from utils import iterate_images
 
 from image_database import ImageDatabase
 
