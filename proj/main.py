@@ -9,16 +9,16 @@ from utils import mse
 def main():
     print("Main script started...\n")
 
-    # db = NITS_DB("database")
-    # db.calculate_everything("result_nits_iqa")
+    db = NITS_DB("database")
+    db.calculate_everything("result_nits_iqa")
 
     # db.load_images()
     # db.load_and_get_deformed_image_collections()
     # db.calculate_quality_values()
 
 
-    db = KADID10K_DB("database")
-    db.calculate_everything("result_kadid10k_iqa")
+    # db = KADID10K_DB("database")
+    # db.calculate_everything("result_kadid10k_iqa")
 
 
     # ref_image = imread("./images/nits_iqa/Database/I1.bmp")
@@ -30,6 +30,8 @@ def main():
 
     # imshow(ref_image)
     # show()
+
+    # mat = scipy.io.loadmat('file.mat')
 
 
 

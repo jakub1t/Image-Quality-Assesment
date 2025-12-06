@@ -1,18 +1,68 @@
 import numpy as np
 from scipy.signal import convolve2d
-from scipy.ndimage import gaussian_filter
-from skimage.transform import resize
+from scipy.ndimage import gaussian_filter, correlate, zoom, convolve
 from skimage.exposure import rescale_intensity
+
+def conv2(x, y, mode='same'):
+    return np.rot90(convolve2d(np.rot90(x, 2), np.rot90(y, 2), mode=mode), 2)
+
+
+def imresize(img, scale_or_size, method='bilinear', antialias=True):
+    """
+    MATLAB-like imresize using SciPy.
+    
+    Parameters
+    ----------
+    img : ndarray
+        Input image (H x W x C or H x W)
+    scale_or_size : float, tuple
+        - scalar: scale factor
+        - (newH, newW): output size in pixels
+    method : str
+        'nearest', 'bilinear', 'bicubic'
+    antialias : bool
+        Apply anti-alias filtering when downsampling (default = True, matches MATLAB)
+    """
+
+    # --- determine output size ---
+    if isinstance(scale_or_size, (int, float)):
+        scale = float(scale_or_size)
+        out_h = int(np.round(img.shape[0] * scale))
+        out_w = int(np.round(img.shape[1] * scale))
+    else:
+        out_h, out_w = scale_or_size
+        scale_h = out_h / img.shape[0]
+        scale_w = out_w / img.shape[1]
+        scale = (scale_h, scale_w)
+
+    # If scale_or_size was size tuple
+    if not isinstance(scale_or_size, (int, float)):
+        zoom_factors = (scale_h, scale_w) + (() if img.ndim == 2 else (1,))
+    else:
+        zoom_factors = (scale, scale) + (() if img.ndim == 2 else (1,))
+
+    # --- mapping interpolation method ---
+    orders = {
+        'nearest': 0,
+        'bilinear': 1,
+        'bicubic': 3
+    }
+    order = orders.get(method.lower(), 1)
+
+    # --- Anti-alias filtering for downsampling ---
+    if antialias:
+        if isinstance(scale_or_size, (int, float)):
+            scale_h = scale_w = scale
+        if scale_h < 1 or scale_w < 1:
+            sigma = max(1/scale_h, 1/scale_w) / 3
+            img = gaussian_filter(img, sigma=(sigma, sigma, 0) if img.ndim == 3 else (sigma, sigma))
+
+    # --- Perform resize ---
+    out = zoom(img, zoom_factors, order=order)
+    return out
 
 
 # ---------------- spectral residue saliency ---------------- #
-
-def mat2gray(x):
-    xmin, xmax = np.min(x), np.max(x)
-    if xmax - xmin < 1e-12:
-        return np.zeros_like(x)
-    return (x - xmin) / (xmax - xmin)
-
 
 def spectral_residue_saliency(image):
 
@@ -21,25 +71,16 @@ def spectral_residue_saliency(image):
     gauSigma = 6
     gauSize = 15
 
-    new_rows = int(image.shape[0] * scale)
-    new_cols = int(image.shape[1] * scale)
-
-    inImg = resize(
-        image,
-        (new_rows, new_cols),
-        order=1,          # bilinear
-        mode='reflect',
-        anti_aliasing=False
-    )
+    inImg = imresize(image, scale, method='bicubic')
 
     myFFT = np.fft.fft2(inImg)
 
     logAmplitude = np.log(np.abs(myFFT) + 1e-12)
     phase = np.angle(myFFT)
 
-    aveKernel = np.ones((aveKernelSize, aveKernelSize)) / (aveKernelSize ** 2)
+    aveKernel = np.ones((aveKernelSize, aveKernelSize), dtype=np.float64) / (aveKernelSize * aveKernelSize)
 
-    logAmp_blur = convolve2d(logAmplitude, aveKernel, mode='same', boundary='symm')
+    logAmp_blur = convolve(logAmplitude, aveKernel, mode='nearest')
 
     spectralResidual = logAmplitude - logAmp_blur
 
@@ -47,9 +88,9 @@ def spectral_residue_saliency(image):
 
     saliency = gaussian_filter(saliency, gauSigma)
 
-    saliency = mat2gray(saliency)
+    saliency = rescale_intensity(saliency, in_range='image', out_range=(0, 1))
 
-    saliency = resize(saliency, image.shape, order=1, mode='reflect')
+    saliency = imresize(saliency, image.shape, method='bilinear')
 
     return saliency
 
@@ -85,7 +126,7 @@ def calculate_ffs(reference_image, deformaed_image):
     aveKernel = np.ones((F, F)) / (F * F)
 
     def downsample_matlab(x):
-        blurred = convolve2d(x, aveKernel, mode='same', boundary='symm')
+        blurred = conv2(x, aveKernel)
         return blurred[0:rows:F, 0:cols:F]
 
     L1 = downsample_matlab(L1)
@@ -114,11 +155,11 @@ def calculate_ffs(reference_image, deformaed_image):
     dx = np.array([[1,0,-1],
                    [1,0,-1],
                    [1,0,-1]], dtype=np.float64) / 3
-    dy = dx.T
+    dy = np.atleast_2d(dx).T.conj()
 
     def grad_mag(x):
-        Ix = convolve2d(x, dx, mode='same', boundary='symm')
-        Iy = convolve2d(x, dy, mode='same', boundary='symm')
+        Ix = conv2(x, dx)
+        Iy = conv2(x, dy)
         return np.sqrt(Ix**2 + Iy**2)
 
     gR = grad_mag(L1)
@@ -139,14 +180,27 @@ def calculate_ffs(reference_image, deformaed_image):
 
     score = 0.4 * VS_HVS + 0.4 * GS_HVS + 0.2 * CS
 
-    score[score < 0] = 0
+    score = score.flatten()
+    # score[score < 0] = 0
 
-    score = np.sqrt(score)
-    score = np.sqrt(score)
-    score = np.mean(np.abs(score - np.mean(score))) ** 0.15
+    # score = score ** 0.5
+    # score = score ** 0.5
+    # score = np.mean(np.abs(score - np.mean(score))) ** 0.15
 
-    if np.isnan(score):
-        print("Score is NaN")
-        exit()
+    # if np.isnan(score):
+    #     print("Score is NaN")
+    #     exit()
 
-    return float(score)
+    x = np.asarray(score).reshape(-1)
+
+    quarter_power = np.sign(x) * np.sqrt(np.sqrt(np.abs(x)))
+    mad_val = np.median(np.abs(quarter_power - np.median(quarter_power)))
+    score_out = mad_val ** 0.15
+
+    # scipy built-in mad()
+    # x = np.asarray(score).reshape(-1)
+    # quarter_power = np.sign(x) * np.sqrt(np.sqrt(np.abs(x)))
+    # mad_val = median_abs_deviation(quarter_power, scale=1)  # MATLAB uses scale=1
+    # score_out = mad_val ** 0.15
+
+    return score_out
