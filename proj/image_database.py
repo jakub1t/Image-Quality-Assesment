@@ -6,6 +6,7 @@ from itertools import repeat
 from pandas import Series
 
 from scipy.stats import pearsonr, spearmanr, kendalltau
+from scipy.optimize import curve_fit, leastsq
 from skimage.metrics import structural_similarity
 from sgessim import sg_essim
 from ffs import calculate_ffs
@@ -77,30 +78,6 @@ class ImageDatabase:
         print(f"\nTime elapsed for processing: {time_end - time_start:.2f} seconds\n")
 
 
-    def calculate_coefficients(self):
-
-        for quality_name, quality_values in self.quality_measures_dictionary.items():
-
-            plcc, srocc, krocc = self.get_coefficients(self.mos_values, quality_values)
-
-            print(f"=======================================================")
-            print(f"======================={quality_name}========================")
-            print(f"=======================================================\n")
-
-            print(f"===================\nPLCC: {plcc}\n===================\n")
-            print(f"===================\nSROCC: {srocc}\n===================\n")
-            print(f"===================\nKROCC: {krocc}\n===================\n")
-
-
-    def save_to_csv(self, csv_name):
-
-        new_df = self.save_values_to_df(self.df, **self.quality_measures_dictionary)
-
-        print(f"Dataframe after iteration:\n {new_df.head(50)}\n\n")
-
-        new_df.to_csv(f"./{csv_name}.csv", sep='\t', encoding='utf-8', index=False, header=True)
-
-
     def calculate_quality_from_measures(reference_image, image):
             
         mse_val = mse(reference_image, image)
@@ -137,7 +114,7 @@ class ImageDatabase:
                 ffs_list.append(ffs_val)
 
                 if console_log == True:
-                    print(result)
+                    # print(result)
                     print(f"Image: {image_list[i]}")
                     print(f"MSE: {mse_val}")
                     print(f"PSNR: {psnr_val}")
@@ -150,22 +127,44 @@ class ImageDatabase:
         return mse_list, psnr_list, ssim_list, sg_essim_list, ffs_list
 
 
-    def get_coefficients(self, array1, array2):
+    def calculate_coefficients(self):
+
+        for quality_name, quality_values in self.quality_measures_dictionary.items():
+            
+            plcc, srocc, krocc = self.get_coefficients(self.mos_values, quality_values)
+
+            print(f"=======================================================")
+            print(f"======================={quality_name}========================")
+            print(f"=======================================================\n")
+
+            print(f"===================\nPLCC: {plcc}\n===================\n")
+            print(f"===================\nSROCC: {srocc}\n===================\n")
+            print(f"===================\nKROCC: {krocc}\n===================\n")
+
+
+    def get_coefficients(self, x, y):
+        # Non-linear regression for PLCC
+        x = safe_clip_nonfinite(x)
+        y = safe_clip_nonfinite(y)
+        b1_0 = (max(y) - min(y))
+        initial_guess = [b1_0, 1, np.mean(x), 0, np.mean(y)]
+        betas, _ = curve_fit(logistic_regression_fun, x, y, p0=initial_guess, maxfev=20000)
+        x_mapped = logistic_regression_fun(x, *betas)
 
         # Pearson’s linear correlation coefficient
-        pearson_coefficient, _ = pearsonr(array1, array2)
+        pearson_coefficient, _ = pearsonr(x_mapped, y)
 
-        pearson_coefficient = np.round(pearson_coefficient, 3)
+        pearson_coefficient = np.abs(np.round(pearson_coefficient, 3))
 
         # Spearman’s rank-order correlation coefficient 
-        spearman_coefficient, _ = spearmanr(array1, array2)
+        spearman_coefficient, _ = spearmanr(x, y)
 
-        spearman_coefficient = np.round(spearman_coefficient, 3)
+        spearman_coefficient = np.abs(np.round(spearman_coefficient, 3))
 
         # Kendall’s rank order correlation coefficient
-        kendall_coefficient, _ = kendalltau(array1, array2)
+        kendall_coefficient, _ = kendalltau(x, y)
 
-        kendall_coefficient = np.round(kendall_coefficient, 3)
+        kendall_coefficient = np.abs(np.round(kendall_coefficient, 3))
 
         return pearson_coefficient, spearman_coefficient, kendall_coefficient
 
@@ -179,6 +178,35 @@ class ImageDatabase:
             df[key] = Series(value)
 
         return df
+
+
+    def save_to_csv(self, csv_name):
+
+        new_df = self.save_values_to_df(self.df, **self.quality_measures_dictionary)
+
+        print(f"Dataframe after iteration:\n {new_df.head(50)}\n\n")
+
+        new_df.to_csv(f"./{csv_name}.csv", sep='\t', encoding='utf-8', index=False, header=True)
+
+
+def safe_clip_nonfinite(arr):
+    arr = np.asarray(arr, dtype=float)
+    # handle NaN
+    if np.isnan(arr).any():
+        arr = np.where(np.isnan(arr), np.nanmean(arr), arr)
+    # handle +inf
+    if np.isposinf(arr).any():
+        max_finite = np.nanmax(arr[np.isfinite(arr)])
+        arr = np.where(np.isposinf(arr), max_finite, arr)
+    # handle -inf
+    if np.isneginf(arr).any():
+        min_finite = np.nanmin(arr[np.isfinite(arr)])
+        arr = np.where(np.isneginf(arr), min_finite, arr)
+    return arr
+
+
+def logistic_regression_fun(x, b1, b2, b3, b4, b5):
+    return b1 * (0.5 - 1.0 / (1 + np.exp(b2 * (x - b3)))) + b4 * x + b5
 
 
 def mse (array1, array2):
