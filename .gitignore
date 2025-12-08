@@ -1,7 +1,4 @@
 engy_venv
-images
-
-!images/.gitkeep
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
