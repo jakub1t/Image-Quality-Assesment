@@ -7,16 +7,19 @@ from kadid10k_db import KADID10K_DB
 def main():
     print("Main script started...\n")
 
-    # db = NITS_DB("database")
-    # db.perform_iqa("result_nits_iqa")
+    db = NITS_DB("database")
+    db.load_images_and_data()
+    db.perform_iqa("result_nits_iqa")
 
-    # db.load_images()
-    # db.load_and_get_deformed_image_collections()
+    # db.load_reference_images()
+    # db.load_deformed_image_collections()
     # db.calculate_quality_values()
 
 
-    db = KADID10K_DB("database")
-    db.perform_iqa("result_kadid10k_iqa")
+    # db = KADID10K_DB("database")
+    # db.load_images_and_data()
+    # db.perform_iqa("result_kadid10k_iqa")
+    # db.read_image_data()
 
 
     # ref_image = imread("./images/nits_iqa/Database/I1.bmp")

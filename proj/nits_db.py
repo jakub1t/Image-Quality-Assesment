@@ -2,10 +2,11 @@
 from pandas import read_excel
 from skimage.io import imread, imread_collection
 
-from image_database import ImageDatabase
+from iqa_manager import IQAManager
+from image_data_loader import ImageDataLoader
 
 
-class NITS_DB(ImageDatabase):
+class NITS_DB(IQAManager, ImageDataLoader):
 
     number_of_reference_images = 9
     
@@ -21,16 +22,17 @@ class NITS_DB(ImageDatabase):
         self.mos_values = self.df["Score"].values
     
     
-    def load_images(self):
+    def load_reference_images(self):
         for i in range(1, self.number_of_reference_images + 1):
             ref_image = imread(f"./images/nits_iqa/Database/I{i}.bmp")
             self.reference_images.append(ref_image)
 
     
-    def load_and_get_deformed_image_collections(self):
+    def load_deformed_image_collections(self):
         for j in range(1, self.number_of_reference_images + 1):
             image_collection = imread_collection(f"./images/nits_iqa/Database/I{j}D*.bmp", conserve_memory=True)
             self.deformed_image_collections.append(image_collection)
+
 
 
     

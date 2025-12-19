@@ -7,11 +7,11 @@ from pandas import Series
 
 from scipy.stats import pearsonr, spearmanr, kendalltau
 from scipy.optimize import curve_fit, leastsq
-from skimage.metrics import structural_similarity
+from skimage.metrics import structural_similarity, mean_squared_error, peak_signal_noise_ratio
 from sgessim import sg_essim
 from ffs import calculate_ffs
 
-class ImageDatabase:
+class IQAManager:
 
     number_of_reference_images = 9
     number_of_processes = 1
@@ -38,27 +38,6 @@ class ImageDatabase:
 
     def __init__(self, db_name: str):
         self.db_name = db_name
-    
-
-    def perform_iqa(self, csv_name):
-        self.read_image_data()
-        self.load_images()
-        self.load_and_get_deformed_image_collections()
-        self.calculate_quality_values()
-        self.calculate_coefficients()
-        self.save_to_csv(csv_name=csv_name)
-    
-
-    def read_image_data(self):
-        print("Read data (MOS/DMOS) for database images...")
-    
-    
-    def load_images(self):
-        print("Read reference images from database into array...")
-
-
-    def load_and_get_deformed_image_collections():
-        print("Read deformed images from database into array of collections...")
 
 
     def calculate_quality_values(self):
@@ -105,7 +84,7 @@ class ImageDatabase:
         ffs_list = []
 
         with ProcessPoolExecutor() as executor:
-            for i, result in enumerate(executor.map(ImageDatabase.calculate_quality_from_measures, repeat(reference_image), image_array)):
+            for i, result in enumerate(executor.map(IQAManager.calculate_quality_from_measures, repeat(reference_image), image_array)):
                 mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val = result
                 mse_list.append(mse_val)
                 psnr_list.append(psnr_val)
@@ -187,6 +166,12 @@ class ImageDatabase:
         print(f"Dataframe after iteration:\n {new_df.head(50)}\n\n")
 
         new_df.to_csv(f"./{csv_name}.csv", sep='\t', encoding='utf-8', index=False, header=True)
+    
+
+    def perform_iqa(self, csv_name):
+        self.calculate_quality_values()
+        self.calculate_coefficients()
+        self.save_to_csv(csv_name=csv_name)
 
 
 def safe_clip_nonfinite(arr):
@@ -209,15 +194,17 @@ def logistic_regression_fun(x, b1, b2, b3, b4, b5):
     return b1 * (0.5 - 1.0 / (1 + np.exp(b2 * (x - b3)))) + b4 * x + b5
 
 
-def mse (array1, array2):
-	return np.mean((np.subtract(array1, array2)) ** 2)
+def mse (reference_image, deformed_image):
+    # return np.square(np.subtract(reference_image, deformed_image)).mean()
+    return mean_squared_error(reference_image, deformed_image)
 
 
 def psnr (reference_image, deformed_image):
-	MAX = np.iinfo(reference_image.dtype).max #maximum value of datarange calculated using image data type
+	# MAX = np.iinfo(reference_image.dtype).max #maximum value of datarange calculated using image data type
 
-	mse_value = mse(reference_image, deformed_image)
-	if mse_value == 0.:
-		return np.inf
-	return 10 * np.log10((MAX ** 2) / mse_value)
+	# mse_value = mse(reference_image, deformed_image)
+	# if mse_value == 0.:
+	# 	return np.inf
+	# return 10 * np.log10((MAX ** 2) / mse_value)
+    return peak_signal_noise_ratio(reference_image, deformed_image)
 
