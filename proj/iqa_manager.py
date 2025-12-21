@@ -6,10 +6,13 @@ from itertools import repeat
 from pandas import Series
 
 from scipy.stats import pearsonr, spearmanr, kendalltau
-from scipy.optimize import curve_fit, leastsq
+from scipy.optimize import curve_fit
 from skimage.metrics import structural_similarity, mean_squared_error, peak_signal_noise_ratio
+
+from utils import logistic_regression_fun, safe_clip_nonfinite
 from sgessim import sg_essim
 from ffs import calculate_ffs
+
 
 class IQAManager:
 
@@ -59,9 +62,9 @@ class IQAManager:
 
     def calculate_quality_from_measures(reference_image, image):
             
-        mse_val = mse(reference_image, image)
+        mse_val = mean_squared_error(reference_image, image)
 
-        psnr_val = psnr(reference_image, image)
+        psnr_val = peak_signal_noise_ratio(reference_image, image)
 
         ssim_val = structural_similarity(reference_image, image, channel_axis=2)
 
@@ -168,43 +171,12 @@ class IQAManager:
         new_df.to_csv(f"./{csv_name}.csv", sep='\t', encoding='utf-8', index=False, header=True)
     
 
-    def perform_iqa(self, csv_name):
+    def perform_iqa(self, csv_name=""):
         self.calculate_quality_values()
         self.calculate_coefficients()
-        self.save_to_csv(csv_name=csv_name)
+        if csv_name == "":
+            self.save_to_csv(csv_name=f"result_{self.db_name}")
+        else:
+            self.save_to_csv(csv_name=csv_name)
 
-
-def safe_clip_nonfinite(arr):
-    arr = np.asarray(arr, dtype=float)
-    # handle NaN
-    if np.isnan(arr).any():
-        arr = np.where(np.isnan(arr), np.nanmean(arr), arr)
-    # handle +inf
-    if np.isposinf(arr).any():
-        max_finite = np.nanmax(arr[np.isfinite(arr)])
-        arr = np.where(np.isposinf(arr), max_finite, arr)
-    # handle -inf
-    if np.isneginf(arr).any():
-        min_finite = np.nanmin(arr[np.isfinite(arr)])
-        arr = np.where(np.isneginf(arr), min_finite, arr)
-    return arr
-
-
-def logistic_regression_fun(x, b1, b2, b3, b4, b5):
-    return b1 * (0.5 - 1.0 / (1 + np.exp(b2 * (x - b3)))) + b4 * x + b5
-
-
-def mse (reference_image, deformed_image):
-    # return np.square(np.subtract(reference_image, deformed_image)).mean()
-    return mean_squared_error(reference_image, deformed_image)
-
-
-def psnr (reference_image, deformed_image):
-	# MAX = np.iinfo(reference_image.dtype).max #maximum value of datarange calculated using image data type
-
-	# mse_value = mse(reference_image, deformed_image)
-	# if mse_value == 0.:
-	# 	return np.inf
-	# return 10 * np.log10((MAX ** 2) / mse_value)
-    return peak_signal_noise_ratio(reference_image, deformed_image)
 

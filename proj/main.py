@@ -1,5 +1,5 @@
 # from skimage.io import imread
-# from iqa_manager import mse
+# from skimage.metrics import mean_squared_error
 
 from nits_db import NITS_DB
 from kadid10k_db import KADID10K_DB
@@ -11,13 +11,13 @@ from htid_db import HTID_DB
 def main():
     print("Main script started...\n")
 
-    # db = NITS_DB("database")
+    db = NITS_DB("nits_iqa")
 
-    db = HTID_DB("database")
+    # db = HTID_DB("htid_iqa")
 
-    # db = KADID10K_DB("database")
+    # db = KADID10K_DB("kadid10k_iqa")
 
-    # db = TID2013_DB("database")
+    # db = TID2013_DB("tid2013_iqa")
 
     # db = CSIQ_DB("database")
 
@@ -26,10 +26,7 @@ def main():
     # db.load_deformed_image_collections()
 
     db.load_images_and_data()
-    # db.perform_iqa("result_nits_iqa")
-    # db.perform_iqa("result_kadid10k_iqa")
-    # db.perform_iqa("result_tid2013_iqa")
-    db.perform_iqa("result_htid_iqa")
+    db.perform_iqa()
 
 
 
@@ -41,9 +38,8 @@ def main():
     # ref_image = imread("./images/tid2013/reference_images/I01.bmp")
     # def_image = imread("./images/tid2013/distorted_images/I01_01_2.bmp")
 
-    # print(f"MSE: {mse(ref_image, def_image)}")
+    # print(f"MSE: {mean_squared_error(ref_image, def_image)}")
 
-    # mat = scipy.io.loadmat('file.mat')
 
 
 

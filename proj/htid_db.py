@@ -33,6 +33,7 @@ class HTID_DB(IQAManager, ImageDataLoader):
         self.df.to_csv("./images/htid/htid.csv")
 
         print(self.df.head(50))
+        print(" ")
     
     
     def load_reference_images(self):
