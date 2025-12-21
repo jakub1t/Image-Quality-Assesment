@@ -5,12 +5,15 @@ from nits_db import NITS_DB
 from kadid10k_db import KADID10K_DB
 from csiq_db import CSIQ_DB
 from tid2013_db import TID2013_DB
+from htid_db import HTID_DB
 
 
 def main():
     print("Main script started...\n")
 
     # db = NITS_DB("database")
+
+    db = HTID_DB("database")
 
     # db = KADID10K_DB("database")
 
@@ -22,10 +25,11 @@ def main():
     # db.load_reference_images()
     # db.load_deformed_image_collections()
 
-    # db.load_images_and_data()
+    db.load_images_and_data()
     # db.perform_iqa("result_nits_iqa")
     # db.perform_iqa("result_kadid10k_iqa")
     # db.perform_iqa("result_tid2013_iqa")
+    db.perform_iqa("result_htid_iqa")
 
 
 
