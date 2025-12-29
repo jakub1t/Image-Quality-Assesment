@@ -12,6 +12,7 @@ from skimage.metrics import structural_similarity, mean_squared_error, peak_sign
 from utils import logistic_regression_fun, safe_clip_nonfinite
 from sgessim import sg_essim
 from ffs import calculate_ffs
+from rsei import calculate_rsei
 
 
 class IQAManager:
@@ -29,13 +30,15 @@ class IQAManager:
     ssim_values = []
     sg_essim_values = []
     ffs_values = []
+    rsei_values = []
 
     quality_measures_dictionary = {
         "mse": mse_values,
         "psnr": psnr_values,
         "ssim": ssim_values,
         "sg_essim": sg_essim_values,
-        "ffs": ffs_values
+        "ffs": ffs_values,
+        "rsei": rsei_values
     }
 
 
@@ -49,12 +52,13 @@ class IQAManager:
 
         for j, image_collection in enumerate(self.deformed_image_collections):
 
-            mse_v, psnr_v, ssim_v, sg_essim_v, ffs_v = self.iterate_images(self.reference_images[j], image_collection, console_log=True)
+            mse_v, psnr_v, ssim_v, sg_essim_v, ffs_v, rsei_v = self.iterate_images(self.reference_images[j], image_collection, console_log=True)
             self.mse_values.extend(mse_v)
             self.psnr_values.extend(psnr_v)
             self.ssim_values.extend(ssim_v)
             self.sg_essim_values.extend(sg_essim_v)
             self.ffs_values.extend(ffs_v)
+            self.rsei_values.extend(rsei_v)
 
         time_end = default_timer()
         print(f"\nTime elapsed for processing: {time_end - time_start:.2f} seconds\n")
@@ -71,9 +75,11 @@ class IQAManager:
         sg_essim_val = sg_essim(reference_image, image)
 
         ffs_val = calculate_ffs(reference_image, image)
+
+        rsei_val = calculate_rsei(reference_image, image)
             
 
-        return mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val
+        return mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val, rsei_val
 
 
     def iterate_images(self, reference_image, image_array, console_log=False):
@@ -85,15 +91,17 @@ class IQAManager:
         ssim_list = []
         sg_essim_list = []
         ffs_list = []
+        rsei_list = []
 
         with ProcessPoolExecutor() as executor:
             for i, result in enumerate(executor.map(IQAManager.calculate_quality_from_measures, repeat(reference_image), image_array)):
-                mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val = result
+                mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val, rsei_val = result
                 mse_list.append(mse_val)
                 psnr_list.append(psnr_val)
                 ssim_list.append(ssim_val)
                 sg_essim_list.append(sg_essim_val)
                 ffs_list.append(ffs_val)
+                rsei_list.append(rsei_val)
 
                 if console_log == True:
                     # print(result)
@@ -103,10 +111,11 @@ class IQAManager:
                     print(f"SSIM: {ssim_val}")
                     print(f"SG-ESSIM: {sg_essim_val}")
                     print(f"FFS: {ffs_val}")
+                    print(f"RSEI: {rsei_val}")
                 
                     print("\n")
 
-        return mse_list, psnr_list, ssim_list, sg_essim_list, ffs_list
+        return mse_list, psnr_list, ssim_list, sg_essim_list, ffs_list, rsei_list
 
 
     def calculate_coefficients(self):
