@@ -1,6 +1,8 @@
-# from skimage.io import imread
-# from skimage.metrics import mean_squared_error
-# from rsei import calculate_rsei
+from skimage.io import imread
+from skimage.metrics import mean_squared_error
+from ffs import calculate_ffs
+from rsei import calculate_rsei
+from sgessim import sg_essim
 
 from nits_db import NITS_DB
 from kadid10k_db import KADID10K_DB
@@ -16,9 +18,9 @@ def main():
 
     # db = HTID_DB("htid_iqa")
 
-    db = KADID10K_DB("kadid10k_iqa")
+    # db = KADID10K_DB("kadid10k_iqa")
 
-    # db = TID2013_DB("tid2013_iqa")
+    db = TID2013_DB("tid2013_iqa")
 
     # db = CSIQ_DB("database")
 
@@ -34,12 +36,14 @@ def main():
     ### temp notes and tests:
 
     # ref_image = imread("./images/nits_iqa/Database/I1.bmp")
-    # def_image = imread("./images/nits_iqa/Database/I1D8L5.bmp")
+    # def_image = imread("./images/nits_iqa/Database/I1D5L5.bmp")
 
     # ref_image = imread("./images/tid2013/reference_images/I01.bmp")
     # def_image = imread("./images/tid2013/distorted_images/I01_01_2.bmp")
 
     # print(f"MSE: {mean_squared_error(ref_image, def_image)}")
+    # print(f"FFS: {calculate_ffs(ref_image, def_image)}")
+    # print(f"SG_ESSIM: {sg_essim(ref_image, def_image)}")
     # print(f"RSEI: {calculate_rsei(ref_image, def_image)}")
 
 

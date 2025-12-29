@@ -1,8 +1,9 @@
 import numpy as np
-from scipy.ndimage import gaussian_filter, convolve
-from skimage.exposure import rescale_intensity
+from scipy.ndimage import gaussian_filter
+from scipy.signal import convolve2d
+from skimage.transform import resize
 
-from utils import conv2, imresize
+from utils import conv2, mad
 
 
 # ---------------- spectral residue saliency ---------------- #
@@ -10,39 +11,36 @@ from utils import conv2, imresize
 def spectral_residue_saliency(image):
 
     scale = 0.25
-    aveKernelSize = 3
-    gauSigma = 6
+    ave_kernel_size = 3
+    gau_sigma = 6
 
-    inImg = imresize(image, scale, method='bicubic')
+    in_img = resize(image, (int(image.shape[0] * scale), int(image.shape[1] * scale)), anti_aliasing=True)
 
-    myFFT = np.fft.fft2(inImg)
+    my_fft = np.fft.fft2(in_img)
+    log_amplitude = np.log(np.abs(my_fft) + 1e-8)
+    phase = np.angle(my_fft)
 
-    logAmplitude = np.log(np.abs(myFFT) + 1e-12)
-    phase = np.angle(myFFT)
+    ave_kernel = np.ones((ave_kernel_size, ave_kernel_size)) / (ave_kernel_size ** 2)
+    smooth_log_amp = convolve2d(log_amplitude, ave_kernel, mode='same', boundary='symm')
 
-    aveKernel = np.ones((aveKernelSize, aveKernelSize), dtype=np.float64) / (aveKernelSize * aveKernelSize)
+    spectral_residual = log_amplitude - smooth_log_amp
+    saliency_map = np.abs(np.fft.ifft2(np.exp(spectral_residual + 1j * phase))) ** 2
 
-    logAmp_blur = convolve(logAmplitude, aveKernel, mode='nearest')
+    saliency_map = gaussian_filter(saliency_map, sigma=gau_sigma)
+    saliency_map -= saliency_map.min()
+    saliency_map /= (saliency_map.max() + 1e-8)
 
-    spectralResidual = logAmplitude - logAmp_blur
+    saliency_map = resize(saliency_map, image.shape, anti_aliasing=True)
 
-    saliency = np.abs(np.fft.ifft2(np.exp(spectralResidual + 1j * phase))) ** 2
-
-    saliency = gaussian_filter(saliency, gauSigma)
-
-    saliency = rescale_intensity(saliency, in_range='image', out_range=(0, 1))
-
-    saliency = imresize(saliency, image.shape, method='bilinear')
-
-    return saliency
+    return saliency_map
 
 
 # ---------------------- main FFS function ---------------------- #
 
 def calculate_ffs(reference_image, deformaed_image):
     
-    img1 = reference_image.astype(np.float64)
-    img2 = deformaed_image.astype(np.float64)
+    img1 = np.float64(reference_image)
+    img2 = np.float64(deformaed_image)
 
     rows, cols, _ = img1.shape
 
@@ -63,13 +61,13 @@ def calculate_ffs(reference_image, deformaed_image):
     N1 = 0.34*img1[:,:,0] - 0.60*img1[:,:,1] + 0.17*img1[:,:,2]
     N2 = 0.34*img2[:,:,0] - 0.60*img2[:,:,1] + 0.17*img2[:,:,2]
 
-    minDimension = min(rows, cols)
-    F = max(1, round(minDimension / 256))
-    aveKernel = np.ones((F, F)) / (F * F)
+    min_dim = min(rows, cols)
+    F = max(1, round(min_dim / 256))
+    ave_kernel = np.ones((F, F)) / (F ** 2)
 
     def downsample_(x):
-        result = conv2(x, aveKernel)
-        return result[0:rows:F, 0:cols:F]
+        result = conv2(x, ave_kernel)
+        return result[::F, ::F]
 
     L1 = downsample_(L1)
     L2 = downsample_(L2)
@@ -96,8 +94,8 @@ def calculate_ffs(reference_image, deformaed_image):
 
     dx = np.array([[1,0,-1],
                    [1,0,-1],
-                   [1,0,-1]], dtype=np.float64) / 3
-    dy = np.atleast_2d(dx).T.conj()
+                   [1,0,-1]], dtype=np.float64) / 3.0
+    dy = dx.conj().transpose()
 
     def grad_mag(x):
         Ix = conv2(x, dx)
@@ -122,10 +120,7 @@ def calculate_ffs(reference_image, deformaed_image):
 
     score = 0.4 * VS_HVS + 0.4 * GS_HVS + 0.2 * CS
 
-    x = np.asarray(score).reshape(-1)
-
-    quarter_power = np.sign(x) * np.sqrt(np.sqrt(np.abs(x)))
-    mad_val = np.median(np.abs(quarter_power - np.median(quarter_power)))
-    score_out = mad_val ** 0.15
+    score_out = mad((score.flatten() ** 0.5) ** 0.5) ** 0.15
+    # score_out = np.mean(np.abs((score.flatten() ** 0.5) ** 0.5 - np.mean((score.flatten() ** 0.5) ** 0.5))) ** 0.15
 
     return score_out

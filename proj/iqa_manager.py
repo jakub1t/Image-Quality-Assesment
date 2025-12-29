@@ -12,7 +12,7 @@ from skimage.metrics import structural_similarity, mean_squared_error, peak_sign
 from utils import logistic_regression_fun, safe_clip_nonfinite
 from sgessim import sg_essim
 from ffs import calculate_ffs
-from rsei import calculate_rsei
+from rsei_test import calculate_rsei
 
 
 class IQAManager:
@@ -52,13 +52,10 @@ class IQAManager:
 
         for j, image_collection in enumerate(self.deformed_image_collections):
 
-            mse_v, psnr_v, ssim_v, sg_essim_v, ffs_v, rsei_v = self.iterate_images(self.reference_images[j], image_collection, console_log=True)
-            self.mse_values.extend(mse_v)
-            self.psnr_values.extend(psnr_v)
-            self.ssim_values.extend(ssim_v)
-            self.sg_essim_values.extend(sg_essim_v)
-            self.ffs_values.extend(ffs_v)
-            self.rsei_values.extend(rsei_v)
+            measures_matrix = self.iterate_images(self.reference_images[j], image_collection, console_log=True)
+
+            for i, measure in enumerate(self.quality_measures_dictionary.values()):
+                measure.extend(measures_matrix[i])
 
         time_end = default_timer()
         print(f"\nTime elapsed for processing: {time_end - time_start:.2f} seconds\n")
@@ -85,37 +82,26 @@ class IQAManager:
     def iterate_images(self, reference_image, image_array, console_log=False):
         
         image_list = image_array.files
-        
-        mse_list = []
-        psnr_list = []
-        ssim_list = []
-        sg_essim_list = []
-        ffs_list = []
-        rsei_list = []
+
+        value_matrix = [[0 for x in range(1)] for y in range(len(self.quality_measures_dictionary))] 
 
         with ProcessPoolExecutor() as executor:
-            for i, result in enumerate(executor.map(IQAManager.calculate_quality_from_measures, repeat(reference_image), image_array)):
-                mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val, rsei_val = result
-                mse_list.append(mse_val)
-                psnr_list.append(psnr_val)
-                ssim_list.append(ssim_val)
-                sg_essim_list.append(sg_essim_val)
-                ffs_list.append(ffs_val)
-                rsei_list.append(rsei_val)
+            for i, results in enumerate(executor.map(IQAManager.calculate_quality_from_measures, repeat(reference_image), image_array)):
+
+                for j, result in enumerate(results):
+                    value_matrix[j].append(result)
 
                 if console_log == True:
-                    # print(result)
+                    # print(results)
                     print(f"Image: {image_list[i]}")
-                    print(f"MSE: {mse_val}")
-                    print(f"PSNR: {psnr_val}")
-                    print(f"SSIM: {ssim_val}")
-                    print(f"SG-ESSIM: {sg_essim_val}")
-                    print(f"FFS: {ffs_val}")
-                    print(f"RSEI: {rsei_val}")
+                    for k, key in enumerate(self.quality_measures_dictionary.keys()):
+                        print(f"{key}: {results[k]}")
                 
                     print("\n")
+                    
+        value_matrix = [v_list[1:] for v_list in value_matrix]
 
-        return mse_list, psnr_list, ssim_list, sg_essim_list, ffs_list, rsei_list
+        return value_matrix
 
 
     def calculate_coefficients(self):

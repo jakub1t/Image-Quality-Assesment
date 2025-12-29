@@ -36,63 +36,27 @@ def logistic_regression_fun(x, b1, b2, b3, b4, b5):
 
 def conv2(x, y, mode='same'):
     """
-    MATLAB-like conv2d.
+    MATLAB-like conv2.
     
     :param x: array_like
     :param y: array_like
     :param mode: A string indicating the size of the output
     """
-    return np.rot90(convolve2d(np.rot90(x, 2), np.rot90(y, 2), mode=mode), 2)
+    return np.rot90(convolve2d(np.rot90(x, 2), np.rot90(y, 2), mode=mode, boundary="symm"), 2)
 
 
-def imresize(img, scale_or_size, method="bilinear", antialias=True):
-    """
-    MATLAB-like imresize.
-    
-    Parameters
-    ----------
-    img : ndarray
-        Input image (H x W x C or H x W)
-    scale_or_size : float, tuple
-        - scalar: scale factor
-        - (newH, newW): output size in pixels
-    method : str
-        "nearest", "bilinear", "bicubic"
-    antialias : bool
-        Apply anti-alias filtering when downsampling (default = True, matches MATLAB)
-    """
+def mad(x):
+    x = np.ma.array(x).compressed()
+    med = np.mean(x)
+    return np.mean(np.abs(x - med))
 
-    # Determine output size
-    if isinstance(scale_or_size, (int, float)):
-        scale = float(scale_or_size)
-        out_h = int(np.round(img.shape[0] * scale))
-        out_w = int(np.round(img.shape[1] * scale))
-    else:
-        out_h, out_w = scale_or_size
-        scale_h = out_h / img.shape[0]
-        scale_w = out_w / img.shape[1]
-        scale = (scale_h, scale_w)
 
-    # If scale_or_size was size tuple
-    if not isinstance(scale_or_size, (int, float)):
-        zoom_factors = (scale_h, scale_w) + (() if img.ndim == 2 else (1,))
-    else:
-        zoom_factors = (scale, scale) + (() if img.ndim == 2 else (1,))
-
-    orders = {
-        "nearest": 0,
-        "bilinear": 1,
-        "bicubic": 3
-    }
-    order = orders.get(method.lower(), 1)
-
-    # Anti-alias filtering for downsampling
-    if antialias:
-        if isinstance(scale_or_size, (int, float)):
-            scale_h = scale_w = scale
-        if scale_h < 1 or scale_w < 1:
-            sigma = max(1/scale_h, 1/scale_w) / 3
-            img = gaussian_filter(img, sigma=(sigma, sigma, 0) if img.ndim == 3 else (sigma, sigma))
-
-    out = zoom(img, zoom_factors, order=order)
-    return out
+def gauss2D(shape = (3, 3), sigma = 0.5):
+    m, n = [(ss - 1.) / 2. for ss in shape]
+    y, x = np.ogrid[-m : m + 1, -n : n + 1]
+    h = np.exp( -(x * x + y * y) / (2. * sigma * sigma) )
+    h[ h < np.finfo(h.dtype).eps * h.max() ] = 0
+    sumh = h.sum()
+    if sumh != 0:
+        h /= sumh
+    return h

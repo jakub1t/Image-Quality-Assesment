@@ -1,5 +1,4 @@
 import numpy as np
-from skimage.segmentation import slic
 from scipy.spatial import ConvexHull
 from skimage.color import rgb2lab, rgb2ycbcr
 from skimage.draw import polygon
@@ -84,14 +83,14 @@ def perform_superpixel_slic(img_lab, kseedsl, kseedsa, kseedsb, kseedsx, kseedsy
 
     klabels = np.zeros((n_rows, n_cols), dtype=np.int32)
 
-    clustersize = np.zeros((numseeds, 1))
-    inv = np.zeros((numseeds, 1))
+    clustersize = np.zeros((numseeds, 1), dtype=np.float64)
+    inv = np.zeros((numseeds, 1), dtype=np.float64)
 
-    sigmal = np.zeros((numseeds, 1))
-    sigmaa = np.zeros((numseeds, 1))
-    sigmab = np.zeros((numseeds, 1))
-    sigmax = np.zeros((numseeds, 1))
-    sigmay = np.zeros((numseeds, 1))
+    sigmal = np.zeros((numseeds, 1), dtype=np.float64)
+    sigmaa = np.zeros((numseeds, 1), dtype=np.float64)
+    sigmab = np.zeros((numseeds, 1), dtype=np.float64)
+    sigmax = np.zeros((numseeds, 1), dtype=np.float64)
+    sigmay = np.zeros((numseeds, 1), dtype=np.float64)
     invwt = 1.0 / ((step / compactness) * (step / compactness))
     distvec = 100000 * np.ones((n_rows, n_cols), np.float64)
     numk = numseeds
@@ -157,133 +156,139 @@ def MI(a, b):
     a = a[:M, :N]
     b = b[:M, :N]
 
+    # Initialize histograms
     hab = np.zeros((256, 256), dtype=np.float64)
     ha = np.zeros(256, dtype=np.float64)
     hb = np.zeros(256, dtype=np.float64)
 
-    if np.max(a) != np.min(a):
-        a = (a - np.min(a)) / (np.max(a) - np.min(a))
+    # Normalization to [0,1]
+    a_min, a_max = a.min(), a.max()
+    if a_max != a_min:
+        a = (a - a_min) / (a_max - a_min)
     else:
-        a = np.zeros((M, N), dtype=np.float64)
+        a = np.zeros((M, N))
 
-    if np.max(b) != np.min(b):
-        b = (b - np.min(b)) / (np.max(b) - np.min(b))
+    b_min, b_max = b.min(), b.max()
+    if b_max != b_min:
+        b = (b - b_min) / (b_max - b_min)
     else:
-        b = np.zeros((M, N), dtype=np.float64)
+        b = np.zeros((M, N))
 
-    a = np.int16(a * 255).astype(np.float64) + 1
-    b = np.int16(b * 255).astype(np.float64) + 1
+    # Quantization
+    a = (a * 255).astype(np.int16)
+    b = (b * 255).astype(np.int16)
 
+    # Histogram accumulation
     for i in range(M):
         for j in range(N):
-            ix = int(a[i, j]) - 1
-            iy = int(b[i, j]) - 1
+            ix = a[i, j]
+            iy = b[i, j]
             hab[ix, iy] += 1
             ha[ix] += 1
             hb[iy] += 1
 
-    hsum = np.sum(hab)
+    # Joint entropy H(a,b)
+    hsum = hab.sum()
     p = hab / hsum
     nz = p > 0
     Hab = -np.sum(p[nz] * np.log(p[nz]))
 
-    hsum = np.sum(ha)
+    # Entropy H(a)
+    hsum = ha.sum()
     p = ha / hsum
     nz = p > 0
     Ha = -np.sum(p[nz] * np.log(p[nz]))
 
-    hsum = np.sum(hb)
+    # Entropy H(b)
+    hsum = hb.sum()
     p = hb / hsum
     nz = p > 0
     Hb = -np.sum(p[nz] * np.log(p[nz]))
 
+    # Mutual information
     mi = Ha + Hb - Hab
 
-    mi_sum = 2 * mi / (Ha + Hb)
+    # Normalized mutual information
+    mi_sum = 2 * mi / (Ha + Hb) if (Ha + Hb) != 0 else 0.0
 
     return Ha, mi_sum
 
-
-def minboundrect(x, y, metric='a'):
+def min_bound_rect(x, y, metric='a'):
 
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
 
     if x.size != y.size:
-        raise ValueError("x and y must be the same size")
+        raise ValueError("x and y must have the same length")
 
-    n = len(x)
+    n = x.size
 
-    if n > 3:
-        hull = ConvexHull(np.column_stack((x, y)))
-        edges = hull.vertices
-        x = x[edges]
-        y = y[edges]
-        x = np.append(x, x[0])
-        y = np.append(y, y[0])
-        nedges = len(x) - 1
-    elif n > 1:
-        nedges = n
-        x = np.append(x, x[0])
-        y = np.append(y, y[0])
-    else:
-        nedges = n
+    if n == 0:
+        return np.array([]), np.array([]), np.array([]), np.array([])
 
-    if nedges == 0:
-        return np.array([]), np.array([]), [], []
+    if n == 1:
+        return np.repeat(x, 5), np.repeat(y, 5), 0.0, 0.0
 
-    if nedges == 1:
-        rectx = np.kron(np.ones((1, 5), dtype=np.float64), x) #np.repeat(x[0], 5)
-        recty = np.kron(np.ones((1, 5), dtype=np.float64), y) #np.repeat(y[0], 5)
-        area = 0
-        return rectx, recty, 0.0, 0.0
-
-    if nedges == 2:
+    if n == 2:
         rectx = x[[0, 1, 1, 0, 0]]
         recty = y[[0, 1, 1, 0, 0]]
-        area = 0
-        perimeter = 2 * np.sqrt((x[1] - x[0])**2 + (y[1] - y[0])**2)
+        perimeter = 2 * np.hypot(x[1] - x[0], y[1] - y[0])
         return rectx, recty, 0.0, perimeter
-    
-    def Rmat(theta):
-        return np.array([[np.cos(theta), np.sin(theta)], [-np.sin(theta), np.cos(theta)]])
-    
-    dx = x[1:] - x[:-1]
-    dy = y[1:] - y[:-1]
-    edgeangles = np.arctan2(dy, dx)
-    edgeangles = np.mod(edgeangles, np.pi / 2)
-    edgeangles = np.unique(edgeangles)
 
-    xy = np.column_stack((x, y))
+    points = np.column_stack((x, y))
+    hull = ConvexHull(points)
+    hull_pts = points[hull.vertices]
 
-    area = np.inf
-    perimeter = np.inf
-    met = np.inf
+    hull_pts = np.vstack([hull_pts, hull_pts[0]])
 
-    for theta in edgeangles:
-        rot = Rmat(-theta)
-        xyr = xy @ rot
+    edges = hull_pts[1:] - hull_pts[:-1]
+    edge_angles = np.arctan2(edges[:, 1], edges[:, 0])
+    edge_angles = np.mod(edge_angles, np.pi / 2.0)
+    edge_angles = np.unique(edge_angles)
 
-        xymin = np.min(xyr, axis=0)
-        xymax = np.max(xyr, axis=0)
+    def R(theta):
+        return np.array([
+            [np.cos(theta), np.sin(theta)],
+            [-np.sin(theta), np.cos(theta)]
+        ])
 
-        A_i = np.prod(xymax - xymin)
-        P_i = 2 * np.sum(xymax - xymin)
+    best_metric = np.inf
+    best_area = np.inf
+    best_perimeter = np.inf
+    best_rect = None
 
-        M_i = A_i if metric == 'a' else P_i
+    for theta in edge_angles:
+        rot = R(-theta)
+        rot_pts = hull_pts @ rot.T
 
-        if M_i < met:
-            met = M_i
-            area = A_i
-            perimeter = P_i
+        min_xy = rot_pts.min(axis=0)
+        max_xy = rot_pts.max(axis=0)
 
-            rect = np.array([xymin, [xymax[0], xymin[1]], xymax, [xymin[0], xymax[1]], xymin])
+        width, height = max_xy - min_xy
+        area = width * height
+        perimeter = 2 * (width + height)
 
-            rect = rect @ rot.conj().transpose()
-            rectx = rect[:, 0]
-            recty = rect[:, 1]
+        current_metric = area if metric == 'a' else perimeter
 
-    return rectx, recty, area, perimeter
+        if current_metric < best_metric:
+            best_metric = current_metric
+            best_area = area
+            best_perimeter = perimeter
+
+            rect = np.array([
+                [min_xy[0], min_xy[1]],
+                [max_xy[0], min_xy[1]],
+                [max_xy[0], max_xy[1]],
+                [min_xy[0], max_xy[1]],
+                [min_xy[0], min_xy[1]]
+            ])
+
+            best_rect = rect @ rot
+
+    rectx = best_rect[:, 0]
+    recty = best_rect[:, 1]
+
+    return rectx, recty, best_area, best_perimeter
 
 
 def calculate_rsei(reference_image, deformed_image):
@@ -320,8 +325,8 @@ def calculate_rsei(reference_image, deformed_image):
             kseedsx[n, 0] = (x - 0.5) * xstrips_adderr
             kseedsy[n, 0] = (y - 0.5) * ystrips_adderr
 
-            px = int(np.clip(kseedsx[n, 0], 0, n_rows - 1))
-            py = int(np.clip(kseedsy[n, 0], 0, n_cols - 1))
+            px = int(np.fix(kseedsx[n, 0]))
+            py = int(np.fix(kseedsy[n, 0]))
 
             kseedsl[n, 0] = img_lab[py, px, 0]
             kseedsa[n, 0] = img_lab[py, px, 1]
@@ -333,29 +338,37 @@ def calculate_rsei(reference_image, deformed_image):
 
     nlabels = enforce_label_connectivity(img_lab, klabels, K)
 
-    img_y1 = rgb2ycbcr(ref_image).astype(np.float64)[:, :, 0]
-    img_y2 = rgb2ycbcr(def_image).astype(np.float64)[:, :, 0]
-
     max_label = int(nlabels.max())
-    Ha_l = np.zeros(max_label)
-    mi_sum_l = np.zeros(max_label)
+    Ha_l = np.zeros(max_label, dtype=np.float64)
+    mi_sum_l = np.zeros(max_label, dtype=np.float64)
 
     for label in range(1, max_label + 1):
-        mask = (nlabels == label)
+        
+        new_nlabels = nlabels.copy()
+        new_nlabels[new_nlabels != label] = 0
+        new_nlabels1 = (new_nlabels == label).astype(np.uint8)
 
-        if not np.any(mask):
+        img_y1 = ref_image.copy()
+        img_y2 = def_image.copy()
+
+        img_y1 = rgb2ycbcr(img_y1).astype(np.float64)
+        img_y2 = rgb2ycbcr(img_y2).astype(np.float64)
+
+        new_nlabels2 = new_nlabels1.astype(bool)
+
+        r, c = np.where(new_nlabels2)
+
+        if len(r) == 0:
             continue
 
-        r, c = np.where(mask)
+        rectx, recty, _, _ = min_bound_rect(c, r)
 
-        rectx, recty, _, _ = minboundrect(c, r, 'a')
+        rr, cc = polygon(recty, rectx, new_nlabels2.shape)
+        new_nlabels2 = np.zeros_like(new_nlabels2, dtype=bool)
+        new_nlabels2[rr, cc] = True
 
-        rr, cc = polygon(recty, rectx, mask.shape)
-        rect_mask = np.zeros_like(mask, dtype=bool)
-        rect_mask[rr, cc] = True
-
-        img_y11 = img_y1 * rect_mask
-        img_y21 = img_y2 * rect_mask
+        img_y11 = img_y1[:, :, 0] * new_nlabels2
+        img_y21 = img_y2[:, :, 0] * new_nlabels2
 
         img_y11 = img_y11[~np.all(img_y11 == 0, axis=1)]
         img_y21 = img_y21[~np.all(img_y21 == 0, axis=1)]
@@ -363,17 +376,12 @@ def calculate_rsei(reference_image, deformed_image):
         img_y11 = img_y11[:, ~np.all(img_y11 == 0, axis=0)]
         img_y21 = img_y21[:, ~np.all(img_y21 == 0, axis=0)]
 
-        if img_y11.size == 0 or img_y21.size == 0:
-            continue
-
         Ha, mi_sum = MI(img_y11, img_y21)
 
         Ha_l[label - 1] = Ha
         mi_sum_l[label - 1] = mi_sum
 
     Ha_sum = np.sum(Ha_l)
-    if Ha_sum == 0:
-        return 0.0
 
     new_Ha = Ha_l / Ha_sum
     pic_MI = np.sum(new_Ha * mi_sum_l)
