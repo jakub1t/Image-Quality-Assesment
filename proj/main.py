@@ -7,6 +7,7 @@ from sgessim import sg_essim
 from nits_db import NITS_DB
 from kadid10k_db import KADID10K_DB
 from tid2013_db import TID2013_DB
+from tid2008_db import TID2008_DB
 from htid_db import HTID_DB
 
 
@@ -19,7 +20,9 @@ def main():
 
     # db = KADID10K_DB()
 
-    db = TID2013_DB()
+    # db = TID2013_DB()
+
+    db = TID2008_DB()
 
     # db.read_image_data()
     # db.load_reference_images()
