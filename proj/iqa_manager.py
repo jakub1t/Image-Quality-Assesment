@@ -3,7 +3,8 @@ import numpy as np
 from timeit import default_timer
 from concurrent.futures import ProcessPoolExecutor
 from itertools import repeat
-from pandas import Series
+from pandas import Series, DataFrame
+from pandas import concat as pdconcat
 
 from scipy.stats import pearsonr, spearmanr, kendalltau
 from scipy.optimize import curve_fit
@@ -47,47 +48,81 @@ class IQAManager:
 
 
     def calculate_quality_values(self):
+        times_dictionary = {key: [] for key in self.quality_measures_dictionary.keys()}
 
         time_start = default_timer()
 
-        for j, image_collection in enumerate(self.deformed_image_collections):
+        for i, image_collection in enumerate(self.deformed_image_collections):
 
-            measures_matrix = self.iterate_images(self.reference_images[j], image_collection, console_log=True)
+            measures_matrix, times_matrix = self.iterate_images(self.reference_images[i], image_collection, console_log=True)
 
-            for i, measure in enumerate(self.quality_measures_dictionary.values()):
-                measure.extend(measures_matrix[i])
+            for j, measure in enumerate(self.quality_measures_dictionary.values()):
+                measure.extend(measures_matrix[j])
+            for k, time in enumerate(times_dictionary.values()):
+                time.extend(times_matrix[k])
 
         time_end = default_timer()
         print(f"\nTime elapsed for processing: {time_end - time_start:.2f} seconds\n")
 
+        for key, value in times_dictionary.items():
+            print(f">>> {key.upper()} average time execution: {np.mean(value)} seconds <<<")
+
+        print("\n")
+        # print(times_dictionary)
+
 
     def calculate_quality_from_measures(reference_image, image):
-            
+
+        times_list = []
+
+        time_start = default_timer()
         mse_val = mean_squared_error(reference_image, image)
+        time_end = default_timer()
+        times_list.append(time_end - time_start)
 
+        time_start = default_timer()
         psnr_val = peak_signal_noise_ratio(reference_image, image)
+        time_end = default_timer()
+        times_list.append(time_end - time_start)
 
+        time_start = default_timer()
         ssim_val = structural_similarity(reference_image, image, channel_axis=2)
+        time_end = default_timer()
+        times_list.append(time_end - time_start)
 
+        time_start = default_timer()
         sg_essim_val = sg_essim(reference_image, image)
+        time_end = default_timer()
+        times_list.append(time_end - time_start)
 
+        time_start = default_timer()
         ffs_val = calculate_ffs(reference_image, image)
+        time_end = default_timer()
+        times_list.append(time_end - time_start)
 
+        time_start = default_timer()
         rsei_val = calculate_rsei(reference_image, image)
-            
+        time_end = default_timer()
+        times_list.append(time_end - time_start)
 
-        return mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val, rsei_val
+        return mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val, rsei_val, times_list
 
 
     def iterate_images(self, reference_image, image_array, console_log=False):
         
         image_list = image_array.files
 
-        value_matrix = [[0 for x in range(1)] for y in range(len(self.quality_measures_dictionary))] 
+        value_matrix = [[0 for x in range(1)] for y in range(len(self.quality_measures_dictionary))]
+        times_matrix = [[0 for x in range(1)] for y in range(len(self.quality_measures_dictionary))]  
 
         with ProcessPoolExecutor() as executor:
             for i, results in enumerate(executor.map(IQAManager.calculate_quality_from_measures, repeat(reference_image), image_array)):
 
+                times_list = list(results).pop()
+                for t, time in enumerate(times_list):
+                    times_matrix[t].append(time)
+
+                results = results[:-1]
                 for j, result in enumerate(results):
                     value_matrix[j].append(result)
 
@@ -100,11 +135,14 @@ class IQAManager:
                     print("\n")
                     
         value_matrix = [v_list[1:] for v_list in value_matrix]
+        times_matrix = [v_list[1:] for v_list in times_matrix]
 
-        return value_matrix
+        return value_matrix, times_matrix
 
 
     def calculate_coefficients(self):
+
+        dfs_cc_list = []
 
         for quality_name, quality_values in self.quality_measures_dictionary.items():
             
@@ -117,6 +155,12 @@ class IQAManager:
             print(f"===================\nPLCC: {plcc}\n===================\n")
             print(f"===================\nSROCC: {srocc}\n===================\n")
             print(f"===================\nKROCC: {krocc}\n===================\n")
+
+            dfs_cc_list.append(DataFrame(data=[plcc, srocc, krocc], columns=[quality_name], index=["plcc", "srocc", "krocc"]))
+
+        dfs_cc = pdconcat(dfs_cc_list, axis=1)
+
+        dfs_cc.to_csv(f"./csv_results/cc_result_{self.db_name}.csv", sep='\t', encoding='utf-8', index=False, header=True)
 
 
     def get_coefficients(self, x, y):
@@ -157,21 +201,21 @@ class IQAManager:
         return df
 
 
-    def save_to_csv(self, csv_name):
+    def save_to_csv(self, df, csv_name):
 
-        new_df = self.save_values_to_df(self.df, **self.quality_measures_dictionary)
+        new_df = self.save_values_to_df(df, **self.quality_measures_dictionary)
 
         print(f"Dataframe after iteration:\n {new_df.head(50)}\n\n")
 
-        new_df.to_csv(f"./{csv_name}.csv", sep='\t', encoding='utf-8', index=False, header=True)
+        new_df.to_csv(f"./csv_results/{csv_name}.csv", sep='\t', encoding='utf-8', index=False, header=True)
     
 
     def perform_iqa(self, csv_name=""):
         self.calculate_quality_values()
         self.calculate_coefficients()
         if csv_name == "":
-            self.save_to_csv(csv_name=f"result_{self.db_name}")
+            self.save_to_csv(df=self.df, csv_name=f"result_{self.db_name}")
         else:
-            self.save_to_csv(csv_name=csv_name)
+            self.save_to_csv(df=self.df, csv_name=csv_name)
 
 

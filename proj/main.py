@@ -14,7 +14,7 @@ from htid_db import HTID_DB
 def main():
     print("Main script started...\n")
 
-    # db = NITS_DB()
+    db = NITS_DB()
 
     # db = HTID_DB()
 
@@ -22,7 +22,7 @@ def main():
 
     # db = TID2013_DB()
 
-    db = TID2008_DB()
+    # db = TID2008_DB()
 
     # db.read_image_data()
     # db.load_reference_images()
