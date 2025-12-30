@@ -12,7 +12,7 @@ from skimage.metrics import structural_similarity, mean_squared_error, peak_sign
 from utils import logistic_regression_fun, safe_clip_nonfinite
 from sgessim import sg_essim
 from ffs import calculate_ffs
-from rsei_test import calculate_rsei
+from rsei import calculate_rsei
 
 
 class IQAManager:

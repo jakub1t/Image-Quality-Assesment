@@ -3,73 +3,65 @@ from scipy.spatial import ConvexHull
 from skimage.color import rgb2lab, rgb2ycbcr
 from skimage.draw import polygon
 
+from timeit import default_timer
 
-def enforce_label_connectivity(img_lab, labels, K=5):
+def enforce_label_connectivity(img_Lab, labels, K):
+    dx = np.array([-1, 0, 1, 0], dtype=np.int32)
+    dy = np.array([0, -1, 0, 1], dtype=np.int32)
 
-    dx = [-1, 0, 1, 0]
-    dy = [0, -1, 0, 1]
+    h, w, _ = img_Lab.shape
+    SUPSZ = (h * w) / K
 
-    m_height, m_width, _ = img_lab.shape
-    M, N = labels.shape
+    nlabels = -np.ones((h, w), dtype=np.int32)
 
-    SUPSZ = (m_height * m_width) / K
-
-    nlabels = -1 * np.ones((M, N), dtype=np.int32)
+    xvec = np.empty(h * w, dtype=np.int32)
+    yvec = np.empty(h * w, dtype=np.int32)
 
     label = 1
     adjlabel = 1
 
-    xvec = np.zeros(m_height * m_width, dtype=np.int32)
-    yvec = np.zeros(m_height * m_width, dtype=np.int32)
+    m = n = 0
 
-    m = 0
-    n = 0
+    for j in range(h):
+        for k in range(w):
 
-    for j in range(m_height):
-        for k in range(m_width):
-
-            # Find an unlabeled pixel
             if nlabels[m, n] < 0:
-
                 nlabels[m, n] = label
                 xvec[0] = k
                 yvec[0] = j
 
-                # Find an adjacent existing label (if any)
                 for i in range(4):
-                    x = xvec[0] + dx[i]
-                    y = yvec[0] + dy[i]
-                    if 0 <= x < m_width and 0 <= y < m_height:
+                    x = k + dx[i]
+                    y = j + dy[i]
+                    if 0 <= x < w and 0 <= y < h:
                         if nlabels[y, x] > 0:
                             adjlabel = nlabels[y, x]
 
-                # Flood fill / region growing
                 count = 1
                 c = 0
                 while c < count:
+                    cx = xvec[c]
+                    cy = yvec[c]
                     for i in range(4):
-                        x = xvec[c] + dx[i]
-                        y = yvec[c] + dy[i]
-                        if 0 <= x < m_width and 0 <= y < m_height:
-                            if (nlabels[y, x] < 0 and
-                                labels[m, n] == labels[y, x]):
+                        x = cx + dx[i]
+                        y = cy + dy[i]
+                        if 0 <= x < w and 0 <= y < h:
+                            if nlabels[y, x] < 0 and labels[m, n] == labels[y, x]:
+                                nlabels[y, x] = label
                                 xvec[count] = x
                                 yvec[count] = y
-                                nlabels[y, x] = label
                                 count += 1
                     c += 1
 
-                # Merge small regions
-                if count < (SUPSZ / 4):
+                if count < SUPSZ / 4:
                     for c in range(count):
                         nlabels[yvec[c], xvec[c]] = adjlabel
-                    label -= 1  # cancel this label
+                    label -= 1
 
                 label += 1
 
-            # Advance linear scan
             n += 1
-            if n >= m_width:
+            if n == w:
                 n = 0
                 m += 1
 
@@ -77,141 +69,106 @@ def enforce_label_connectivity(img_lab, labels, K=5):
 
 
 def perform_superpixel_slic(img_lab, kseedsl, kseedsa, kseedsb, kseedsx, kseedsy, step, compactness):
-    n_rows, n_cols, n_channel = img_lab.shape
+
+    H, W, _ = img_lab.shape
     numseeds = kseedsl.shape[0]
-    img_lab = img_lab.astype(np.float64)
 
-    klabels = np.zeros((n_rows, n_cols), dtype=np.int32)
+    klabels = -np.ones((H, W), dtype=np.int32)
+    distvec = np.full((H, W), np.inf)
 
-    clustersize = np.zeros((numseeds, 1), dtype=np.float64)
-    inv = np.zeros((numseeds, 1), dtype=np.float64)
+    invwt = 1.0 / ((step / compactness) ** 2)
 
-    sigmal = np.zeros((numseeds, 1), dtype=np.float64)
-    sigmaa = np.zeros((numseeds, 1), dtype=np.float64)
-    sigmab = np.zeros((numseeds, 1), dtype=np.float64)
-    sigmax = np.zeros((numseeds, 1), dtype=np.float64)
-    sigmay = np.zeros((numseeds, 1), dtype=np.float64)
-    invwt = 1.0 / ((step / compactness) * (step / compactness))
-    distvec = 100000 * np.ones((n_rows, n_cols), np.float64)
-    numk = numseeds
+    for _ in range(10):
 
-    for itr in range(10):
-        sigmal.fill(0)
-        sigmaa.fill(0)
-        sigmab.fill(0)
-        sigmax.fill(0)
-        sigmay.fill(0)
-        clustersize.fill(0)
-        inv.fill(0)
-        distvec = np.full((n_rows, n_cols), 100000.0)
+        distvec.fill(np.inf)
 
-        for n in range(numk):
-            y1 = max(0, int(kseedsy[n, 0] - step))
-            y2 = min(n_rows - 1, int(kseedsy[n, 0] + step))
-            x1 = max(0, int(kseedsx[n, 0] - step))
-            x2 = min(n_cols - 1, int(kseedsx[n, 0] + step))
-    
-        for y in range(y1, y2 + 1):
-            for x in range(x1, x2 + 1):
-                dist_lab = (img_lab[y, x, 0] - kseedsl[n, 0]) ** 2 + (img_lab[y, x, 1] - kseedsa[n, 0]) ** 2 + (img_lab[y, x, 2] - kseedsb[n, 0]) ** 2
-                dist_xy = (y - kseedsy[n, 0]) ** 2 + (x - kseedsx[n, 0]) ** 2
-                dist = dist_lab + dist_xy * invwt
+        for n in range(numseeds):
+            y0, x0 = int(kseedsy[n, 0]), int(kseedsx[n, 0])
 
-                if dist < distvec[y, x]:
-                    distvec[y, x] = dist
-                    klabels[y, x] = n
+            y1 = max(0, y0 - step)
+            y2 = min(H, y0 + step)
+            x1 = max(0, x0 - step)
+            x2 = min(W, x0 + step)
 
-        for r in range(n_rows):
-            for c in range(n_cols):
-                lbl = klabels[r, c]
-                sigmal[lbl, 0] += img_lab[r, c, 0]
-                sigmaa[lbl, 0] += img_lab[r, c, 1]
-                sigmab[lbl, 0] += img_lab[r, c, 2]
-                sigmax[lbl, 0] += c
-                sigmay[lbl, 0] += r
-                clustersize[lbl, 0] += 1
-                        
-        for m in range(numseeds):
-                if clustersize[m, 0] <= 0:
-                    clustersize[m, 0] = 1
-                inv[m, 0] = 1.0 / clustersize[m, 0]
+            patch = img_lab[y1:y2, x1:x2]
 
-        for m in range(numseeds):
-            kseedsl[m, 0] = sigmal[m, 0] * inv[m, 0]
-            kseedsa[m, 0] = sigmaa[m, 0] * inv[m, 0]
-            kseedsb[m, 0] = sigmab[m, 0] * inv[m, 0]
-            kseedsx[m, 0] = sigmax[m, 0] * inv[m, 0]
-            kseedsy[m, 0] = sigmay[m, 0] * inv[m, 0]
+            dl = patch[..., 0] - kseedsl[n, 0]
+            da = patch[..., 1] - kseedsa[n, 0]
+            db = patch[..., 2] - kseedsb[n, 0]
+
+            yy, xx = np.mgrid[y1:y2, x1:x2]
+            dxy = (yy - y0) ** 2 + (xx - x0) ** 2
+
+            dist = dl**2 + da**2 + db**2 + dxy * invwt
+
+            mask = dist < distvec[y1:y2, x1:x2]
+            distvec[y1:y2, x1:x2][mask] = dist[mask]
+            klabels[y1:y2, x1:x2][mask] = n
+
+        # Update seeds
+        for n in range(numseeds):
+            mask = klabels == n
+            if not np.any(mask):
+                continue
+            pts = img_lab[mask]
+            ys, xs = np.where(mask)
+
+            kseedsl[n, 0] = pts[:, 0].mean()
+            kseedsa[n, 0] = pts[:, 1].mean()
+            kseedsb[n, 0] = pts[:, 2].mean()
+            kseedsx[n, 0] = xs.mean()
+            kseedsy[n, 0] = ys.mean()
 
     return klabels
 
 
+
 def MI(a, b):
-
-    Ma, Na = a.shape
-    Mb, Nb = b.shape
-    M = min(Ma, Mb)
-    N = min(Na, Nb)
-
+    M = min(a.shape[0], b.shape[0])
+    N = min(a.shape[1], b.shape[1])
     a = a[:M, :N]
     b = b[:M, :N]
 
-    # Initialize histograms
-    hab = np.zeros((256, 256), dtype=np.float64)
-    ha = np.zeros(256, dtype=np.float64)
-    hb = np.zeros(256, dtype=np.float64)
+    # Normalize to [0,1]
+    def normalize(x):
+        xmin, xmax = x.min(), x.max()
+        if xmax > xmin:
+            return (x - xmin) / (xmax - xmin)
+        return np.zeros_like(x)
 
-    # Normalization to [0,1]
-    a_min, a_max = a.min(), a.max()
-    if a_max != a_min:
-        a = (a - a_min) / (a_max - a_min)
-    else:
-        a = np.zeros((M, N))
+    a = normalize(a)
+    b = normalize(b)
 
-    b_min, b_max = b.min(), b.max()
-    if b_max != b_min:
-        b = (b - b_min) / (b_max - b_min)
-    else:
-        b = np.zeros((M, N))
+    a = (a * 255).astype(np.uint8)
+    b = (b * 255).astype(np.uint8)
 
-    # Quantization
-    a = (a * 255).astype(np.int16)
-    b = (b * 255).astype(np.int16)
+    # Joint histogram (vectorized)
+    hab, _, _ = np.histogram2d(
+        a.ravel(), b.ravel(),
+        bins=256,
+        range=[[0, 255], [0, 255]]
+    )
 
-    # Histogram accumulation
-    for i in range(M):
-        for j in range(N):
-            ix = a[i, j]
-            iy = b[i, j]
-            hab[ix, iy] += 1
-            ha[ix] += 1
-            hb[iy] += 1
+    ha = hab.sum(axis=1)
+    hb = hab.sum(axis=0)
 
-    # Joint entropy H(a,b)
-    hsum = hab.sum()
-    p = hab / hsum
-    nz = p > 0
-    Hab = -np.sum(p[nz] * np.log(p[nz]))
+    def entropy(p):
+        p = p[p > 0]
+        return -np.sum(p * np.log(p))
 
-    # Entropy H(a)
-    hsum = ha.sum()
-    p = ha / hsum
-    nz = p > 0
-    Ha = -np.sum(p[nz] * np.log(p[nz]))
+    hab /= hab.sum()
+    ha /= ha.sum()
+    hb /= hb.sum()
 
-    # Entropy H(b)
-    hsum = hb.sum()
-    p = hb / hsum
-    nz = p > 0
-    Hb = -np.sum(p[nz] * np.log(p[nz]))
+    Hab = entropy(hab)
+    Ha = entropy(ha)
+    Hb = entropy(hb)
 
-    # Mutual information
     mi = Ha + Hb - Hab
-
-    # Normalized mutual information
-    mi_sum = 2 * mi / (Ha + Hb) if (Ha + Hb) != 0 else 0.0
+    mi_sum = 2 * mi / (Ha + Hb) if (Ha + Hb) > 0 else 0.0
 
     return Ha, mi_sum
+
 
 def min_bound_rect(x, y, metric='a'):
 
@@ -305,7 +262,7 @@ def calculate_rsei(reference_image, deformed_image):
     img_lab = rgb2lab(ref_image)
 
     superpixel_size = image_size / K
-    step = np.uint32(np.sqrt(superpixel_size))
+    step = int(np.sqrt(superpixel_size))
 
     xstrips = np.uint32(n_cols / step)
     ystrips = np.uint32(n_rows / step)
@@ -332,51 +289,45 @@ def calculate_rsei(reference_image, deformed_image):
             kseedsa[n, 0] = img_lab[py, px, 1]
             kseedsb[n, 0] = img_lab[py, px, 2]
             n += 1
-    n = 0
+
+    # time_start = default_timer()
 
     klabels = perform_superpixel_slic(img_lab, kseedsl, kseedsa, kseedsb, kseedsx, kseedsy, step, compactness)
 
     nlabels = enforce_label_connectivity(img_lab, klabels, K)
 
+    # time_end = default_timer()
+    # print(f"\nTime elapsed for processing: {time_end - time_start:.2f} seconds\n")
+
     max_label = int(nlabels.max())
     Ha_l = np.zeros(max_label, dtype=np.float64)
     mi_sum_l = np.zeros(max_label, dtype=np.float64)
 
+    img_y1 = rgb2ycbcr(ref_image)[:, :, 0]
+    img_y2 = rgb2ycbcr(def_image)[:, :, 0]
+
     for label in range(1, max_label + 1):
-        
-        new_nlabels = nlabels.copy()
-        new_nlabels[new_nlabels != label] = 0
-        new_nlabels1 = (new_nlabels == label).astype(np.uint8)
-
-        img_y1 = ref_image.copy()
-        img_y2 = def_image.copy()
-
-        img_y1 = rgb2ycbcr(img_y1).astype(np.float64)
-        img_y2 = rgb2ycbcr(img_y2).astype(np.float64)
-
-        new_nlabels2 = new_nlabels1.astype(bool)
-
-        r, c = np.where(new_nlabels2)
-
-        if len(r) == 0:
+        mask = (nlabels == label)
+        if not np.any(mask):
             continue
 
+        r, c = np.where(mask)
         rectx, recty, _, _ = min_bound_rect(c, r)
 
-        rr, cc = polygon(recty, rectx, new_nlabels2.shape)
-        new_nlabels2 = np.zeros_like(new_nlabels2, dtype=bool)
-        new_nlabels2[rr, cc] = True
+        rr, cc = polygon(recty, rectx, mask.shape)
+        rect_mask = np.zeros_like(mask)
+        rect_mask[rr, cc] = True
 
-        img_y11 = img_y1[:, :, 0] * new_nlabels2
-        img_y21 = img_y2[:, :, 0] * new_nlabels2
+        y1 = img_y1 * rect_mask
+        y2 = img_y2 * rect_mask
 
-        img_y11 = img_y11[~np.all(img_y11 == 0, axis=1)]
-        img_y21 = img_y21[~np.all(img_y21 == 0, axis=1)]
+        y1 = y1[np.any(y1, axis=1)]
+        y2 = y2[np.any(y2, axis=1)]
 
-        img_y11 = img_y11[:, ~np.all(img_y11 == 0, axis=0)]
-        img_y21 = img_y21[:, ~np.all(img_y21 == 0, axis=0)]
+        y1 = y1[:, np.any(y1, axis=0)]
+        y2 = y2[:, np.any(y2, axis=0)]
 
-        Ha, mi_sum = MI(img_y11, img_y21)
+        Ha, mi_sum = MI(y1, y2)
 
         Ha_l[label - 1] = Ha
         mi_sum_l[label - 1] = mi_sum

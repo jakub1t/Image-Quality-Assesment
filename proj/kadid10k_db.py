@@ -10,8 +10,11 @@ class KADID10K_DB(IQAManager, ImageDataLoader):
 
     number_of_reference_images = 81
     
-    def __init__(self, db_name: str):
-        self.db_name = db_name
+    def __init__(self, db_name: str = None):
+        if db_name != None:
+            self.db_name = db_name
+        else: 
+            self.db_name = "kadid10k_iqa"
 
 
     def read_image_data(self):

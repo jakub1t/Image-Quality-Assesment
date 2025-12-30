@@ -11,8 +11,11 @@ class TID2013_DB(IQAManager, ImageDataLoader):
     number_of_reference_images = 25
     reference_image_names = []
     
-    def __init__(self, db_name: str):
-        self.db_name = db_name
+    def __init__(self, db_name: str = None):
+        if db_name != None:
+            self.db_name = db_name
+        else: 
+            self.db_name = "tid2013_iqa"
 
 
     def read_image_data(self):
@@ -30,7 +33,7 @@ class TID2013_DB(IQAManager, ImageDataLoader):
         self.mos_values = mos_col
 
         self.df = DataFrame({"image_name":image_col, "mos":mos_col})
-        print(self.df.head(50))
+        # print(self.df.head(50))
     
     
     def load_reference_images(self):
