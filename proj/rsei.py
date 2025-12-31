@@ -2,8 +2,7 @@ import numpy as np
 from scipy.spatial import ConvexHull
 from skimage.color import rgb2lab, rgb2ycbcr
 from skimage.draw import polygon
-
-from timeit import default_timer
+from skimage.segmentation import slic
 
 def enforce_label_connectivity(img_Lab, labels, K):
     dx = np.array([-1, 0, 1, 0], dtype=np.int32)
@@ -250,7 +249,7 @@ def min_bound_rect(x, y, metric='a'):
 
 def calculate_rsei(reference_image, deformed_image):
 
-    K = 5
+    K = 20
     compactness = 20
 
     ref_image = reference_image.astype(np.float64)
@@ -293,6 +292,7 @@ def calculate_rsei(reference_image, deformed_image):
     # time_start = default_timer()
 
     klabels = perform_superpixel_slic(img_lab, kseedsl, kseedsa, kseedsb, kseedsx, kseedsy, step, compactness)
+    # klabels = slic(img_lab, K, compactness, max_size_factor=superpixel_size)
 
     nlabels = enforce_label_connectivity(img_lab, klabels, K)
 

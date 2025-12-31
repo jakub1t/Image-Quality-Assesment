@@ -14,9 +14,9 @@ from htid_db import HTID_DB
 def main():
     print("Main script started...\n")
 
-    db = NITS_DB()
+    # db = NITS_DB()
 
-    # db = HTID_DB()
+    db = HTID_DB()
 
     # db = KADID10K_DB()
 
@@ -36,15 +36,22 @@ def main():
     ### temp notes and tests:
 
     # ref_image = imread("./images/nits_iqa/Database/I1.bmp")
-    # def_image = imread("./images/nits_iqa/Database/I1D7L5.bmp")
+    # def_image = imread("./images/nits_iqa/Database/I1D8L5.bmp")
 
     # ref_image = imread("./images/tid2013/reference_images/I01.bmp")
     # def_image = imread("./images/tid2013/distorted_images/I01_01_2.bmp")
+    
+    # ref_image = imread("./images/tid2008/reference_images/I01.bmp")
+    # for i in range(1, 18):
+    #     if i < 10:
+    #         def_image = imread(f"./images/tid2008/distorted_images/I01_0{i}_4.bmp")
+    #     else:
+    #         def_image = imread(f"./images/tid2008/distorted_images/I01_{i}_4.bmp")
 
-    # print(f"MSE: {mean_squared_error(ref_image, def_image)}")
-    # print(f"FFS: {calculate_ffs(ref_image, def_image)}")
-    # print(f"SG_ESSIM: {sg_essim(ref_image, def_image)}")
-    # print(f"RSEI: {calculate_rsei(ref_image, def_image)}")
+    # # print(f"MSE: {mean_squared_error(ref_image, def_image)}")
+    # # print(f"FFS: {calculate_ffs(ref_image, def_image)}")
+    # # print(f"SG_ESSIM: {sg_essim(ref_image, def_image)}")
+    #     print(f"RSEI: {calculate_rsei(ref_image, def_image)}")
 
 
 
