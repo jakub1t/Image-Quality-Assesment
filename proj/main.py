@@ -2,7 +2,7 @@ from skimage.io import imread
 from skimage.metrics import mean_squared_error
 from ffs import calculate_ffs
 from rsei import calculate_rsei
-from sgessim import sg_essim
+from sgessim import calculate_sg_essim
 
 from nits_db import NITS_DB
 from kadid10k_db import KADID10K_DB
@@ -14,9 +14,9 @@ from htid_db import HTID_DB
 def main():
     print("Main script started...\n")
 
-    # db = NITS_DB()
+    db = NITS_DB()
 
-    db = HTID_DB()
+    # db = HTID_DB()
 
     # db = KADID10K_DB()
 
@@ -47,11 +47,13 @@ def main():
     #         def_image = imread(f"./images/tid2008/distorted_images/I01_0{i}_4.bmp")
     #     else:
     #         def_image = imread(f"./images/tid2008/distorted_images/I01_{i}_4.bmp")
+        
+    #     print(f"SG_ESSIM: {calculate_sg_essim(ref_image, def_image)}")
 
-    # # print(f"MSE: {mean_squared_error(ref_image, def_image)}")
-    # # print(f"FFS: {calculate_ffs(ref_image, def_image)}")
-    # # print(f"SG_ESSIM: {sg_essim(ref_image, def_image)}")
-    #     print(f"RSEI: {calculate_rsei(ref_image, def_image)}")
+    # print(f"MSE: {mean_squared_error(ref_image, def_image)}")
+    # print(f"FFS: {calculate_ffs(ref_image, def_image)}")
+    # print(f"SG_ESSIM: {calculate_sg_essim(ref_image, def_image)}")
+    # print(f"RSEI: {calculate_rsei(ref_image, def_image)}")
 
 
 

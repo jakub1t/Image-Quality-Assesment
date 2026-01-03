@@ -1,5 +1,5 @@
 
-from scipy import ndimage
+from scipy.ndimage import convolve
 from scipy import signal
 import numpy as np
 
@@ -26,8 +26,8 @@ def automatic_downsampling(reference_image, deformed_image):
         low_pass_filter = np.ones((f, f), dtype=np.float64)
         low_pass_filter /= low_pass_filter.sum()
 
-        reference_image = ndimage.convolve(reference_image, low_pass_filter, mode='reflect')
-        deformed_image = ndimage.convolve(deformed_image, low_pass_filter, mode='reflect')
+        reference_image = convolve(reference_image, low_pass_filter, mode='reflect')
+        deformed_image = convolve(deformed_image, low_pass_filter, mode='reflect')
 
         reference_image = reference_image[::f, ::f]
         deformed_image = deformed_image[::f, ::f]
@@ -69,7 +69,7 @@ def get_directional_gradient(image):
     return gradient
 
 
-def sg_essim(reference_image, deformed_image, h = 0.5, L = 255, K = 200):
+def calculate_sg_essim(reference_image, deformed_image, h = 0.5, L = 255, K = 200):
 
     reference_image, deformed_image = preprocess(reference_image, deformed_image)
     reference_image, deformed_image = automatic_downsampling(reference_image, deformed_image)

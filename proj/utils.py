@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.signal import convolve2d
-from scipy.ndimage import gaussian_filter, zoom
 
 
 def safe_clip_nonfinite(arr):
@@ -60,3 +59,18 @@ def gauss2D(shape = (3, 3), sigma = 0.5):
     if sumh != 0:
         h /= sumh
     return h
+
+
+def mat2gray(matrix, scale_range=(0, 1)):
+    
+    matrix = np.array(matrix)
+    
+    min_val = np.min(matrix)
+    max_val = np.max(matrix)
+    
+    norm_matrix = (matrix - min_val) / (max_val - min_val)
+    
+    min_range, max_range = scale_range
+    norm_matrix = norm_matrix * (max_range - min_range) + min_range
+    
+    return norm_matrix

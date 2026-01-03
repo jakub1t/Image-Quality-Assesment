@@ -11,7 +11,7 @@ from scipy.optimize import curve_fit
 from skimage.metrics import structural_similarity, mean_squared_error, peak_signal_noise_ratio
 
 from utils import logistic_regression_fun, safe_clip_nonfinite
-from sgessim import sg_essim
+from sgessim import calculate_sg_essim
 from ffs import calculate_ffs
 from rsei import calculate_rsei
 
@@ -91,7 +91,7 @@ class IQAManager:
         times_list.append(time_end - time_start)
 
         time_start = default_timer()
-        sg_essim_val = sg_essim(reference_image, image)
+        sg_essim_val = calculate_sg_essim(reference_image, image)
         time_end = default_timer()
         times_list.append(time_end - time_start)
 
