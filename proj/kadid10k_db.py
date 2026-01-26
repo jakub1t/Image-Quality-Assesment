@@ -21,14 +21,6 @@ class KADID10K_DB(IQAManager, ImageDataLoader):
         self.df = read_csv("./images/kadid10k/dmos.csv", sep=",")
 
         self.mos_values = self.df["dmos"].values
-
-        # dmos_values = self.df["dmos"].values
-        # mos_min = 1
-        # mos_max = 5
-
-        # for dmos_score in dmos_values:
-        #     self.mos_values.append(mos_min + (1 - dmos_score) * (mos_max - mos_min))
-        # print(self.mos_values)
     
     
     def load_reference_images(self):

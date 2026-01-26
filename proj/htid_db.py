@@ -34,9 +34,6 @@ class HTID_DB(IQAManager, ImageDataLoader):
         self.mos_values = self.df["h_mos"].values
 
         self.df.to_csv("./images/htid/htid.csv")
-
-        print(self.df.head(50))
-        print(" ")
     
     
     def load_reference_images(self):
@@ -46,9 +43,6 @@ class HTID_DB(IQAManager, ImageDataLoader):
             else:
                 ref_image = imread(f"./images/htid/set{i}/im0{i}_01.png")
             self.reference_images.append(ref_image)
-
-        # for img in self.reference_images:
-        #     print(img)
     
 
     def load_deformed_image_collections(self):
@@ -66,8 +60,5 @@ class HTID_DB(IQAManager, ImageDataLoader):
             # Reread collection - bleh
             new_collection = imread_collection(collection_as_list, conserve_memory=True)
             self.deformed_image_collections.append(new_collection)
-
-        # for coll in self.deformed_image_collections:
-        #     print(coll)
 
     

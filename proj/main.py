@@ -1,8 +1,8 @@
 from skimage.io import imread
 from skimage.metrics import mean_squared_error
-from ffs import calculate_ffs
-from sgessim import calculate_sg_essim
-from lgv import calculate_lgv
+from ffs import FFS
+from sgessim import SG_ESSIM
+from lgv import LGV
 
 from nits_db import NITS_DB
 from kadid10k_db import KADID10K_DB
@@ -41,6 +41,9 @@ def main():
     
 
     ### temp notes and tests:
+    # sg_essim = SG_ESSIM()
+    # ffs = FFS()
+    # lgv = LGV()
 
     # ref_image = imread("./images/nits_iqa/Database/I1.bmp")
     # def_image = imread("./images/nits_iqa/Database/I1D8L5.bmp")
@@ -57,14 +60,13 @@ def main():
         
     #     print("------------------------------------------------------")
     #     print(f"MSE: {mean_squared_error(ref_image, def_image)}")
-    #     print(f"SG_ESSIM: {calculate_sg_essim(ref_image, def_image)}")
-    #     print(f"LGV: {calculate_lgv(ref_image, def_image)}")
+    #     print(f"LGV: {lgv.calculate_lgv(ref_image, def_image)}")
     #     print("------------------------------------------------------\n")
 
     # print(f"MSE: {mean_squared_error(ref_image, def_image)}")
-    # print(f"FFS: {calculate_ffs(ref_image, def_image)}")
-    # print(f"SG_ESSIM: {calculate_sg_essim(ref_image, def_image)}")
-    # print(f"LGV: {calculate_lgv(ref_image, def_image)}")
+    # print(f"FFS: {ffs.calculate_ffs(ref_image, def_image)}")
+    # print(f"SG_ESSIM: {sg_essim.calculate_sg_essim(ref_image, def_image)}")
+    # print(f"LGV: {lgv.calculate_lgv(ref_image, def_image)}")
 
 
 

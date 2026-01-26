@@ -33,13 +33,10 @@ class TID2013_DB(IQAManager, ImageDataLoader):
         self.mos_values = mos_col
 
         self.df = DataFrame({"image_name":image_col, "mos":mos_col})
-        # print(self.df.head(50))
     
     
     def load_reference_images(self):
         self.reference_images = imread_collection("./images/tid2013/reference_images/*", conserve_memory=True)
-        # for img in self.reference_images.files:
-        #     print(img)
 
     
     def load_deformed_image_collections(self):
@@ -51,11 +48,6 @@ class TID2013_DB(IQAManager, ImageDataLoader):
             else:
                 image_collection = imread_collection(f"./images/tid2013/distorted_images/I{j}_*", conserve_memory=True)
             self.deformed_image_collections.append(image_collection)
-
-        # for collection in self.deformed_image_collections:
-        #     print(collection.files)
-        #     # for img in collection.files:
-        #     #     print(img)
 
 
     def change_names_in_distorted_images(self):
