@@ -8,12 +8,12 @@ from pandas import concat as pdconcat
 
 from scipy.stats import pearsonr, spearmanr, kendalltau
 from scipy.optimize import curve_fit
-from skimage.metrics import structural_similarity, mean_squared_error, peak_signal_noise_ratio
 
 from utils import logistic_regression_fun, safe_clip_nonfinite
-from sgessim import calculate_sg_essim
-from ffs import calculate_ffs
-from rsei import calculate_rsei
+
+from quality_measure import MSE, PSNR, SSIM
+from sgessim import SG_ESSIM
+from ffs import FFS
 
 
 class IQAManager:
@@ -26,20 +26,26 @@ class IQAManager:
     reference_images = []
     deformed_image_collections = []
 
+
+    mse = MSE("mse")
+    psnr = PSNR("psnr")
+    ssim = SSIM("ssim")
+    sg_essim = SG_ESSIM("sg_essim")
+    ffs = FFS("ffs")
+    quality_measures = [mse, psnr, ssim, sg_essim, ffs]
+
     mse_values = []
     psnr_values = [] 
     ssim_values = []
     sg_essim_values = []
     ffs_values = []
-    rsei_values = []
 
     quality_measures_dictionary = {
         "mse": mse_values,
         "psnr": psnr_values,
         "ssim": ssim_values,
         "sg_essim": sg_essim_values,
-        "ffs": ffs_values,
-        "rsei": rsei_values
+        "ffs": ffs_values
     }
 
 
@@ -71,41 +77,36 @@ class IQAManager:
         # print(times_dictionary)
 
 
-    def calculate_quality_from_measures(reference_image, image):
+    def calculate_quality_from_measures(self, reference_image, image):
 
         times_list = []
 
         time_start = default_timer()
-        mse_val = mean_squared_error(reference_image, image)
+        mse_val = self.quality_measures[0].calculate_quality(reference_image, image)
         time_end = default_timer()
         times_list.append(time_end - time_start)
 
         time_start = default_timer()
-        psnr_val = peak_signal_noise_ratio(reference_image, image)
+        psnr_val = self.quality_measures[1].calculate_quality(reference_image, image)
         time_end = default_timer()
         times_list.append(time_end - time_start)
 
         time_start = default_timer()
-        ssim_val = structural_similarity(reference_image, image, channel_axis=2)
+        ssim_val = self.quality_measures[2].calculate_quality(reference_image, image)
         time_end = default_timer()
         times_list.append(time_end - time_start)
 
         time_start = default_timer()
-        sg_essim_val = calculate_sg_essim(reference_image, image)
+        sg_essim_val = self.quality_measures[3].calculate_quality(reference_image, image)
         time_end = default_timer()
         times_list.append(time_end - time_start)
 
         time_start = default_timer()
-        ffs_val = calculate_ffs(reference_image, image)
+        ffs_val = self.quality_measures[4].calculate_quality(reference_image, image)
         time_end = default_timer()
         times_list.append(time_end - time_start)
 
-        time_start = default_timer()
-        rsei_val = calculate_rsei(reference_image, image)
-        time_end = default_timer()
-        times_list.append(time_end - time_start)
-
-        return mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val, rsei_val, times_list
+        return mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val, times_list
 
 
     def iterate_images(self, reference_image, image_array, console_log=False):
@@ -116,7 +117,7 @@ class IQAManager:
         times_matrix = [[0 for x in range(1)] for y in range(len(self.quality_measures_dictionary))]  
 
         with ProcessPoolExecutor() as executor:
-            for i, results in enumerate(executor.map(IQAManager.calculate_quality_from_measures, repeat(reference_image), image_array)):
+            for i, results in enumerate(executor.map(self.calculate_quality_from_measures, repeat(reference_image), image_array)):
 
                 times_list = list(results).pop()
                 for t, time in enumerate(times_list):

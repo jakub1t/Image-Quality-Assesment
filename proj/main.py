@@ -1,8 +1,8 @@
 from skimage.io import imread
 from skimage.metrics import mean_squared_error
 from ffs import calculate_ffs
-from rsei import calculate_rsei
 from sgessim import calculate_sg_essim
+from lgv import calculate_lgv
 
 from nits_db import NITS_DB
 from kadid10k_db import KADID10K_DB
@@ -14,6 +14,8 @@ from htid_db import HTID_DB
 def main():
     print("Main script started...\n")
 
+    #########################################################################
+    # Uncomment one of object from below to choose image database
     db = NITS_DB()
 
     # db = HTID_DB()
@@ -23,14 +25,19 @@ def main():
     # db = TID2013_DB()
 
     # db = TID2008_DB()
+    #########################################################################
+
 
     # db.read_image_data()
     # db.load_reference_images()
     # db.load_deformed_image_collections()
 
+
+    #########################################################################
+    # Uncomment those two lines to test measures on selected image database
     db.load_images_and_data()
     db.perform_iqa()
-
+    #########################################################################
 
 
     ### temp notes and tests:
@@ -48,12 +55,16 @@ def main():
     #     else:
     #         def_image = imread(f"./images/tid2008/distorted_images/I01_{i}_4.bmp")
         
+    #     print("------------------------------------------------------")
+    #     print(f"MSE: {mean_squared_error(ref_image, def_image)}")
     #     print(f"SG_ESSIM: {calculate_sg_essim(ref_image, def_image)}")
+    #     print(f"LGV: {calculate_lgv(ref_image, def_image)}")
+    #     print("------------------------------------------------------\n")
 
     # print(f"MSE: {mean_squared_error(ref_image, def_image)}")
     # print(f"FFS: {calculate_ffs(ref_image, def_image)}")
     # print(f"SG_ESSIM: {calculate_sg_essim(ref_image, def_image)}")
-    # print(f"RSEI: {calculate_rsei(ref_image, def_image)}")
+    # print(f"LGV: {calculate_lgv(ref_image, def_image)}")
 
 
 

@@ -3,6 +3,14 @@ from scipy.ndimage import convolve
 from scipy import signal
 import numpy as np
 
+from quality_measure import QualityMeasure
+
+
+class SG_ESSIM(QualityMeasure):
+
+    def calculate_quality(self, reference_image, deformed_image):
+        return calculate_sg_essim(reference_image, deformed_image)
+
 
 def preprocess(reference_image, deformed_image):
 
@@ -49,7 +57,7 @@ def get_directional_gradient(image):
     
     kernel1[1:4, 1:4] = Kt
 
-    kernel2 = kernel1.T
+    kernel2 = kernel1.conj().transpose()
 
     kernel3 = (1 / 16) * np.array([
         [0,  0,  3,  0,  0],

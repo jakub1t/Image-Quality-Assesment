@@ -5,6 +5,14 @@ from skimage.transform import resize
 
 from utils import conv2, mad
 
+from quality_measure import QualityMeasure
+
+
+class FFS(QualityMeasure):
+
+    def calculate_quality(self, reference_image, deformed_image):
+        return calculate_ffs(reference_image, deformed_image)
+
 
 # ---------------- spectral residue saliency ---------------- #
 
