@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.ndimage import convolve
-from scipy.special import gamma, gammaln
+from scipy.special import gammaln
 from scipy.linalg import toeplitz
 
 from utils import conv2

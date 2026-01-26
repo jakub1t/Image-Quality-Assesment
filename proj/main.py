@@ -38,7 +38,7 @@ def main():
     db.load_images_and_data()
     db.perform_iqa()
     #########################################################################
-
+    
 
     ### temp notes and tests:
 

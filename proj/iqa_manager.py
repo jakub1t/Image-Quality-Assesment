@@ -14,6 +14,7 @@ from utils import logistic_regression_fun, safe_clip_nonfinite
 from quality_measure import MSE, PSNR, SSIM
 from sgessim import SG_ESSIM
 from ffs import FFS
+from lgv import LGV
 
 
 class IQAManager:
@@ -32,21 +33,8 @@ class IQAManager:
     ssim = SSIM("ssim")
     sg_essim = SG_ESSIM("sg_essim")
     ffs = FFS("ffs")
-    quality_measures = [mse, psnr, ssim, sg_essim, ffs]
-
-    mse_values = []
-    psnr_values = [] 
-    ssim_values = []
-    sg_essim_values = []
-    ffs_values = []
-
-    quality_measures_dictionary = {
-        "mse": mse_values,
-        "psnr": psnr_values,
-        "ssim": ssim_values,
-        "sg_essim": sg_essim_values,
-        "ffs": ffs_values
-    }
+    lgv = LGV("lgv")
+    quality_measures = [mse, psnr, ssim, sg_essim, ffs, lgv]
 
 
     def __init__(self, db_name: str):
@@ -54,7 +42,6 @@ class IQAManager:
 
 
     def calculate_quality_values(self):
-        times_dictionary = {key: [] for key in self.quality_measures_dictionary.keys()}
 
         time_start = default_timer()
 
@@ -62,59 +49,40 @@ class IQAManager:
 
             measures_matrix, times_matrix = self.iterate_images(self.reference_images[i], image_collection, console_log=True)
 
-            for j, measure in enumerate(self.quality_measures_dictionary.values()):
-                measure.extend(measures_matrix[j])
-            for k, time in enumerate(times_dictionary.values()):
-                time.extend(times_matrix[k])
+            for j, measure in enumerate(self.quality_measures):
+                measure.collected_values.extend(measures_matrix[j])
+                measure.time_values.extend(times_matrix[j])
 
         time_end = default_timer()
         print(f"\nTime elapsed for processing: {time_end - time_start:.2f} seconds\n")
 
-        for key, value in times_dictionary.items():
-            print(f">>> {key.upper()} average time execution: {np.mean(value)} seconds <<<")
+        for measure in self.quality_measures:
+            measure.average_time = np.mean(measure.time_values)
+            print(f">>> {measure.name.upper()} average time execution: {measure.average_time} seconds <<<")
 
         print("\n")
-        # print(times_dictionary)
 
 
     def calculate_quality_from_measures(self, reference_image, image):
 
         times_list = []
+        quality_values = []
 
-        time_start = default_timer()
-        mse_val = self.quality_measures[0].calculate_quality(reference_image, image)
-        time_end = default_timer()
-        times_list.append(time_end - time_start)
+        for measure in self.quality_measures:
+            time_start = default_timer()
+            quality_values.append(measure.calculate_quality(reference_image, image))
+            time_end = default_timer()
+            times_list.append(time_end - time_start)
 
-        time_start = default_timer()
-        psnr_val = self.quality_measures[1].calculate_quality(reference_image, image)
-        time_end = default_timer()
-        times_list.append(time_end - time_start)
-
-        time_start = default_timer()
-        ssim_val = self.quality_measures[2].calculate_quality(reference_image, image)
-        time_end = default_timer()
-        times_list.append(time_end - time_start)
-
-        time_start = default_timer()
-        sg_essim_val = self.quality_measures[3].calculate_quality(reference_image, image)
-        time_end = default_timer()
-        times_list.append(time_end - time_start)
-
-        time_start = default_timer()
-        ffs_val = self.quality_measures[4].calculate_quality(reference_image, image)
-        time_end = default_timer()
-        times_list.append(time_end - time_start)
-
-        return mse_val, psnr_val, ssim_val, sg_essim_val, ffs_val, times_list
+        return quality_values, times_list
 
 
     def iterate_images(self, reference_image, image_array, console_log=False):
         
         image_list = image_array.files
 
-        value_matrix = [[0 for x in range(1)] for y in range(len(self.quality_measures_dictionary))]
-        times_matrix = [[0 for x in range(1)] for y in range(len(self.quality_measures_dictionary))]  
+        value_matrix = [[0 for x in range(1)] for y in range(len(self.quality_measures))]
+        times_matrix = [[0 for x in range(1)] for y in range(len(self.quality_measures))]  
 
         with ProcessPoolExecutor() as executor:
             for i, results in enumerate(executor.map(self.calculate_quality_from_measures, repeat(reference_image), image_array)):
@@ -123,15 +91,16 @@ class IQAManager:
                 for t, time in enumerate(times_list):
                     times_matrix[t].append(time)
 
-                results = results[:-1]
+                # results = results[:-1]
+                results = results[0]
                 for j, result in enumerate(results):
                     value_matrix[j].append(result)
 
                 if console_log == True:
                     # print(results)
                     print(f"Image: {image_list[i]}")
-                    for k, key in enumerate(self.quality_measures_dictionary.keys()):
-                        print(f"{key}: {results[k]}")
+                    for k, measure in enumerate(self.quality_measures):
+                        print(f"{measure.name}: {results[k]}")
                 
                     print("\n")
                     
@@ -145,23 +114,23 @@ class IQAManager:
 
         dfs_cc_list = []
 
-        for quality_name, quality_values in self.quality_measures_dictionary.items():
+        for measure in self.quality_measures:
             
-            plcc, srocc, krocc = self.get_coefficients(self.mos_values, quality_values)
+            plcc, srocc, krocc = self.get_coefficients(self.mos_values, measure.collected_values)
 
             print(f"=======================================================")
-            print(f"======================={quality_name}========================")
+            print(f"======================={measure.name}========================")
             print(f"=======================================================\n")
 
             print(f"===================\nPLCC: {plcc}\n===================\n")
             print(f"===================\nSROCC: {srocc}\n===================\n")
             print(f"===================\nKROCC: {krocc}\n===================\n")
 
-            dfs_cc_list.append(DataFrame(data=[plcc, srocc, krocc], columns=[quality_name], index=["plcc", "srocc", "krocc"]))
+            dfs_cc_list.append(DataFrame(data=[plcc, srocc, krocc, np.round(measure.average_time, 6)], columns=[measure.name], index=["plcc", "srocc", "krocc", "average time execution [s]"]))
 
         dfs_cc = pdconcat(dfs_cc_list, axis=1)
 
-        dfs_cc.to_csv(f"./csv_results/cc_result_{self.db_name}.csv", sep='\t', encoding='utf-8', index=False, header=True)
+        dfs_cc.to_csv(f"./csv_results/cc_result_{self.db_name}.csv", sep='\t', encoding='utf-8', header=True)
 
 
     def get_coefficients(self, x, y):
@@ -204,7 +173,12 @@ class IQAManager:
 
     def save_to_csv(self, df, csv_name):
 
-        new_df = self.save_values_to_df(df, **self.quality_measures_dictionary)
+        quality_measures_dictionary = {}
+
+        for measure in self.quality_measures:
+            quality_measures_dictionary[measure.name] = measure.collected_values
+
+        new_df = self.save_values_to_df(df, **quality_measures_dictionary)
 
         print(f"Dataframe after iteration:\n {new_df.head(50)}\n\n")
 

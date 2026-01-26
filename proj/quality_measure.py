@@ -9,6 +9,7 @@ class QualityMeasure(ABC):
         self.name = name
         self.collected_values = []
         self.time_values = []
+        self.average_time = 0.0
 
 
     @abstractmethod
