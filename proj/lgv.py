@@ -90,11 +90,9 @@ class LGV(QualityMeasure):
 
 
     def get_local_variation(self, ref_img, def_img, T):
-        Sx = (1 / 16) * np.array([
-            [3,  0,  -3],
-            [10, 0,  -10],
-            [3,  0,  -3]
-        ], dtype=np.float64)
+        Sx = np.array([[3,  0, -3],
+                   [10, 0, -10],
+                   [3,  0, -3]], dtype=np.float64) / 16.0
 
         Sy = Sx.conj().transpose()
 
@@ -106,7 +104,7 @@ class LGV(QualityMeasure):
         Gy_def = conv2(def_img, Sy)
         G_def = np.sqrt(np.square(Gx_def) + np.square(Gy_def))
 
-        SL = (2 * G_ref * G_def + T) / (np.square(G_ref) * np.square(G_def) + T)
+        SL = (2 * G_ref * G_def + T) / (np.square(G_ref) + np.square(G_def) + T)
 
         return SL
 
@@ -118,7 +116,7 @@ class LGV(QualityMeasure):
         G_ref = self.fgl_deriv_maxtrix_norm(a, ref_img, h)
         G_def = self.fgl_deriv_maxtrix_norm(a, def_img, h)
 
-        SG = (2 * G_ref * G_def + C) / (np.square(G_ref) * np.square(G_def) + C)
+        SG = (2 * G_ref * G_def + C) / (np.square(G_ref) + np.square(G_def) + C)
 
         return SG
 
