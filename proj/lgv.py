@@ -50,51 +50,42 @@ class LGV(QualityMeasure):
 
 
     def fgl_deriv_maxtrix_norm(self, a, Y, h):
+        Y = np.asarray(Y, dtype=float)
 
-        # horizontal derivative
+        # ---------- Horizontal ----------
         m, n = Y.shape
         J = np.arange(n)
 
-        s = (-1) ** J
-
-        log_coeff = (gammaln(a + 1) - gammaln(J + 1) - gammaln(a + 1 - J))
-
-        coeff = (np.exp(log_coeff) / (h ** a)) * s
+        log_coeff = (gammaln(a + 1) - gammaln(J + 1) - gammaln(a + 1 - J) - a * np.log(h))
+        coeff = ((-1.0) ** J) * np.exp(log_coeff)
 
         M = np.tril(np.ones((n, n)))
-
-        T = np.tile(coeff, (n, 1))
+        T = np.meshgrid(coeff)
 
         Dx = np.zeros((m, n))
-
         for row in range(m):
             R = toeplitz(Y[row, :])
             Dx[row, :] = np.sum(R * M * T, axis=1)
 
-        # vertical derivative
+        # ---------- Vertical ----------
         Yt = Y.conj().transpose()
         m, n = Yt.shape
         J = np.arange(n)
 
-        s = (-1) ** J
-
-        log_coeff = (gammaln(a + 1) - gammaln(J + 1) - gammaln(a + 1 - J))
-
-        coeff = (np.exp(log_coeff) / (h ** a)) * s
+        log_coeff = (gammaln(a + 1) - gammaln(J + 1) - gammaln(a + 1 - J) - a * np.log(h))
+        coeff = ((-1.0) ** J) * np.exp(log_coeff)
 
         M = np.tril(np.ones((n, n)))
-        T = np.tile(coeff, (n, 1))
+        T = np.meshgrid(coeff)
 
         Dy = np.zeros((m, n))
-
         for row in range(m):
             R = toeplitz(Yt[row, :])
             Dy[row, :] = np.sum(R * M * T, axis=1)
 
         Dy = Dy.conj().transpose()
 
-        DM = np.sqrt(Dx ** 2 + Dy ** 2) # magnitude
-
+        DM = np.sqrt(Dx**2 + Dy**2)
         return DM
 
 

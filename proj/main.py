@@ -16,13 +16,13 @@ def main():
 
     #########################################################################
     # Uncomment one of object from below to choose image database
-    db = NITS_DB()
+    # db = NITS_DB()
 
     # db = HTID_DB()
 
     # db = KADID10K_DB()
 
-    # db = TID2013_DB()
+    db = TID2013_DB()
 
     # db = TID2008_DB()
     #########################################################################
