@@ -47,7 +47,7 @@ class IQAManager:
 
         for i, image_collection in enumerate(self.deformed_image_collections):
 
-            measures_matrix, times_matrix = self.iterate_images(self.reference_images[i], image_collection, console_log=True)
+            measures_matrix, times_matrix = self.iterate_images(self.reference_images[i], image_collection, console_log=False)
 
             for j, measure in enumerate(self.quality_measures):
                 measure.collected_values.extend(measures_matrix[j])
