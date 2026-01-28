@@ -3,11 +3,10 @@ from pandas import DataFrame, Series
 from scipy.io import loadmat
 from skimage.io import imread, imread_collection
 
-from iqa_manager import IQAManager
 from image_data_loader import ImageDataLoader
 
 
-class HTID_DB(IQAManager, ImageDataLoader):
+class HTID_DB(ImageDataLoader):
 
     number_of_reference_images = 48
     

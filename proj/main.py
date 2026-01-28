@@ -1,3 +1,4 @@
+from iqa import IQA
 
 from nits_db import NITS_DB
 from kadid10k_db import KADID10K_DB
@@ -30,8 +31,8 @@ def main():
 
     # Leave those two lines uncommented to test measures on selected image database
 
-    db.load_images_and_data()
-    db.perform_iqa()
+    executor = IQA(db)
+    executor.run_iqa()
 
     #########################################################################
 

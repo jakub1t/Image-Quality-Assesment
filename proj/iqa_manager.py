@@ -20,13 +20,11 @@ from lgv import LGV
 class IQAManager:
 
     number_of_reference_images = 9
-    number_of_processes = 1
 
     df = None
     mos_values = []
     reference_images = []
     deformed_image_collections = []
-
 
     mse = MSE("mse")
     psnr = PSNR("psnr")
@@ -47,7 +45,7 @@ class IQAManager:
 
         for i, image_collection in enumerate(self.deformed_image_collections):
 
-            measures_matrix, times_matrix = self.iterate_images(self.reference_images[i], image_collection, console_log=False)
+            measures_matrix, times_matrix = self.iterate_images(self.reference_images[i], image_collection, console_log=True)
 
             for j, measure in enumerate(self.quality_measures):
                 measure.collected_values.extend(measures_matrix[j])
@@ -63,14 +61,14 @@ class IQAManager:
         print("\n")
 
 
-    def calculate_quality_from_measures(self, reference_image, image):
+    def calculate_quality_from_measures(self, reference_image, deformed_image):
 
         times_list = []
         quality_values = []
 
         for measure in self.quality_measures:
             time_start = default_timer()
-            quality_values.append(measure.calculate_quality(reference_image, image))
+            quality_values.append(measure.calculate_quality(reference_image, deformed_image))
             time_end = default_timer()
             times_list.append(time_end - time_start)
 

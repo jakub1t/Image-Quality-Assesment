@@ -2,11 +2,10 @@
 from pandas import read_excel
 from skimage.io import imread, imread_collection
 
-from iqa_manager import IQAManager
 from image_data_loader import ImageDataLoader
 
 
-class NITS_DB(IQAManager, ImageDataLoader):
+class NITS_DB(ImageDataLoader):
 
     number_of_reference_images = 9
     

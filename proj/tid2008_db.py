@@ -2,11 +2,10 @@ import os
 from skimage.io import imread_collection, imread
 from pandas import DataFrame
 
-from iqa_manager import IQAManager
 from image_data_loader import ImageDataLoader
 
 
-class TID2008_DB(IQAManager, ImageDataLoader):
+class TID2008_DB(ImageDataLoader):
 
     number_of_reference_images = 25
     reference_image_names = []
@@ -33,6 +32,7 @@ class TID2008_DB(IQAManager, ImageDataLoader):
         self.mos_values = mos_col
 
         self.df = DataFrame({"image_name":image_col, "mos":mos_col})
+        self.normalize_image_names()
     
     
     def load_reference_images(self):
@@ -46,7 +46,6 @@ class TID2008_DB(IQAManager, ImageDataLoader):
 
     
     def load_deformed_image_collections(self):
-        self.change_names_in_distorted_images()
 
         for j in range(1, self.number_of_reference_images + 1):
             if j < 10:
@@ -56,7 +55,7 @@ class TID2008_DB(IQAManager, ImageDataLoader):
             self.deformed_image_collections.append(image_collection)
 
 
-    def change_names_in_distorted_images(self):
+    def normalize_image_names(self):
         for path, dirs, files in os.walk("./images/tid2008/distorted_images"):
             for file in files:
                 new_file = file.lower()
