@@ -23,19 +23,23 @@ class KADID10K_DB(ImageDataLoader):
     
     
     def load_reference_images(self):
+        temp_list = []
         for i in range(1, self.number_of_reference_images + 1):
             if i < 10:
                 ref_image = imread(f"./images/kadid10k/images/I0{i}.png")
             else:
                 ref_image = imread(f"./images/kadid10k/images/I{i}.png")
-            self.reference_images.append(ref_image)
+            temp_list.append(ref_image)
+        self.reference_images[:] = temp_list
 
 
     def load_deformed_image_collections(self):
+        temp_list = []
         for j in range(1, self.number_of_reference_images + 1):
             if j < 10:
                 image_collection = imread_collection(f"./images/kadid10k/images/I0{j}_*.png", conserve_memory=True)
             else:
                 image_collection = imread_collection(f"./images/kadid10k/images/I{j}_*.png", conserve_memory=True)
-            self.deformed_image_collections.append(image_collection)
+            temp_list.append(image_collection)
+        self.deformed_image_collections[:] = temp_list
 

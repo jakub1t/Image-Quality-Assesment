@@ -25,15 +25,19 @@ class NITS_DB(ImageDataLoader):
     
     
     def load_reference_images(self):
+        temp_list = []
         for i in range(1, self.number_of_reference_images + 1):
             ref_image = imread(f"./images/nits_iqa/Database/I{i}.bmp")
-            self.reference_images.append(ref_image)
+            temp_list.append(ref_image)
+        self.reference_images[:] = temp_list
 
     
     def load_deformed_image_collections(self):
+        temp_list = []
         for j in range(1, self.number_of_reference_images + 1):
             image_collection = imread_collection(f"./images/nits_iqa/Database/I{j}D*.bmp", conserve_memory=True)
-            self.deformed_image_collections.append(image_collection)
+            temp_list.append(image_collection)
+        self.deformed_image_collections[:] = temp_list
 
 
 

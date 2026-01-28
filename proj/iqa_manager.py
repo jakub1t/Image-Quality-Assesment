@@ -184,6 +184,10 @@ class IQAManager:
     
 
     def perform_iqa(self, csv_name=""):
+        for measure in self.quality_measures:
+            measure.collected_values = []
+            measure.time_values = []
+            measure.average_time = 0.0
         self.calculate_quality_values()
         self.calculate_coefficients()
         if csv_name == "":

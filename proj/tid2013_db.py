@@ -36,22 +36,26 @@ class TID2013_DB(ImageDataLoader):
     
     
     def load_reference_images(self):
+        temp_list = []
         # self.reference_images = imread_collection("./images/tid2013/reference_images/*", conserve_memory=True) # This line unfortunately does not work with ProcessPoolExecutor
         for i in range(1, self.number_of_reference_images + 1):
             if i < 10:
                 ref_image = imread(f"./images/tid2013/reference_images/i0{i}.bmp")
             else:
                 ref_image = imread(f"./images/tid2013/reference_images/i{i}.bmp")
-            self.reference_images.append(ref_image)
+            temp_list.append(ref_image)
+        self.reference_images[:] = temp_list
 
     
     def load_deformed_image_collections(self):
+        temp_list = []
         for j in range(1, self.number_of_reference_images + 1):
             if j < 10:
                 image_collection = imread_collection(f"./images/tid2013/distorted_images/I0{j}_*", conserve_memory=True)
             else:
                 image_collection = imread_collection(f"./images/tid2013/distorted_images/I{j}_*", conserve_memory=True)
-            self.deformed_image_collections.append(image_collection)
+            temp_list.append(image_collection)
+        self.deformed_image_collections[:] = temp_list
 
 
     def normalize_image_names(self):

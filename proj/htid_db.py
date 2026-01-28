@@ -36,12 +36,14 @@ class HTID_DB(ImageDataLoader):
     
     
     def load_reference_images(self):
+        temp_list = []
         for i in range(1, self.number_of_reference_images + 1):
             if i < 10:
                 ref_image = imread(f"./images/htid/set0{i}/im00{i}_01.png")
             else:
                 ref_image = imread(f"./images/htid/set{i}/im0{i}_01.png")
-            self.reference_images.append(ref_image)
+            temp_list.append(ref_image)
+        self.reference_images[:] = temp_list
     
 
     def load_deformed_image_collections(self):
@@ -51,13 +53,13 @@ class HTID_DB(ImageDataLoader):
                 image_collection = imread_collection(f"./images/htid/set0{j}/*", conserve_memory=True)
             else:
                 image_collection = imread_collection(f"./images/htid/set{j}/*", conserve_memory=True)
-            temp_list.append(image_collection)
 
             # This thing below to remove first image from collections - its used for reference
             collection_as_list = image_collection.files
             collection_as_list.pop(0)
             # Reread collection - bleh
             new_collection = imread_collection(collection_as_list, conserve_memory=True)
-            self.deformed_image_collections.append(new_collection)
+            temp_list.append(new_collection)
+        self.deformed_image_collections[:] = temp_list
 
     

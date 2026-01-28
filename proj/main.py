@@ -8,33 +8,48 @@ from htid_db import HTID_DB
 
 
 def main():
-    print("Main script started...\n")
+    image_databases = [NITS_DB(), HTID_DB(), KADID10K_DB(), TID2013_DB(), TID2008_DB()]
+    num_of_available_dbs = len(image_databases)
+    correctly_selected = False
+    
+    print("Main script started...")
+    while correctly_selected == False:
+        print("\nSelect database that will be used for iqa:")
+        print("Option no.: 0 -> exit")
+        for i, img_db in enumerate(image_databases):
+            print(f"Option no.: {i + 1} -> {img_db.db_name[:-4].upper()}")
+        choice = input(f"Choose one of the numbers from 0 to {num_of_available_dbs} to select an option: ")
+        print("\n")
 
-    #########################################################################
+        try:
+            index = int(choice)
+            if index <= num_of_available_dbs and index >= 0:
+                correctly_selected = True
+            else:
+                correctly_selected = False
+                print("Incorrect option input...")
+        except ValueError:
+            print("Incorrect option input...")
+            correctly_selected = False
+    
+    if index == 0:
+        exit(0)
+    else:
+        executor = IQA(image_databases[index - 1])
+        executor.run_iqa()
 
-    # Leave one from lines below uncommented to choose image database
+        # To run iqa with all image databases
+        # executor = IQA(image_databases[0])
+        # executor.run_iqa()
+        # executor.set_image_database(image_databases[1])
+        # executor.run_iqa()
+        # executor.set_image_database(image_databases[2])
+        # executor.run_iqa()
+        # executor.set_image_database(image_databases[3])
+        # executor.run_iqa()
+        # executor.set_image_database(image_databases[4])
+        # executor.run_iqa()
 
-    db = NITS_DB()
-
-    # db = HTID_DB()
-
-    # db = KADID10K_DB()
-
-    # db = TID2013_DB()
-
-    # db = TID2008_DB()
-
-    #########################################################################
-
-
-    #########################################################################
-
-    # Leave those two lines uncommented to test measures on selected image database
-
-    executor = IQA(db)
-    executor.run_iqa()
-
-    #########################################################################
 
 
 if __name__ == "__main__":
