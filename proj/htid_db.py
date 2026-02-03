@@ -7,10 +7,24 @@ from image_data_loader import ImageDataLoader
 
 
 class HTID_DB(ImageDataLoader):
+    """HTID image database object that implements ImageDataLoader abstract class.
+    Overrides three parent methods:
+    - read_image_data
+    - load_reference_images
+    - load_deformed_image_collections
+
+    Args:
+        ImageDataLoader : Abstract parent class with the core functionality.
+    """
 
     number_of_reference_images = 48
     
     def __init__(self, db_name: str = None):
+        """Initializing method that allows to assign image database name used in process of naming the result csv files.
+
+        Args:
+            db_name (str, optional): Image database name to assign and to customize csv file names. Defaults to "htid_iqa".
+        """
         if db_name != None:
             self.db_name = db_name
         else: 
@@ -18,6 +32,7 @@ class HTID_DB(ImageDataLoader):
 
 
     def read_image_data(self):
+        """Overriden parent class. Loads MOS scores from mat file and saves them to df (Pandas DataFrame object) field."""
         mat = loadmat("./images/htid/htid.mat")
 
         # mat to pandas df
@@ -36,6 +51,7 @@ class HTID_DB(ImageDataLoader):
     
     
     def load_reference_images(self):
+        """Overriden parent class. Saves loaded reference images in reference_images field."""
         temp_list = []
         for i in range(1, self.number_of_reference_images + 1):
             if i < 10:
@@ -47,6 +63,7 @@ class HTID_DB(ImageDataLoader):
     
 
     def load_deformed_image_collections(self):
+        """Overriden parent class. Saves loaded distorted image collections in deformed_image_collections field."""
         temp_list = []
         for j in range(1, self.number_of_reference_images + 1):
             if j < 10:

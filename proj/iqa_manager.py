@@ -18,6 +18,14 @@ from lgv import LGV
 
 
 class IQAManager:
+    """Probably the most important class that contains the core functionality of the program.
+    Iterates through images, calculates for them quality values, measures average time execution of quality indicators 
+    and saves results to csv files.
+
+    Returns:
+        - All calculated values by quality indicators in csv file format.
+        - Calculated correlation coefficient values and average time measurements in csv file format.
+    """
 
     number_of_reference_images = 9
 
@@ -36,10 +44,18 @@ class IQAManager:
 
 
     def __init__(self, db_name: str):
+        """Initializing method that allows to assign image database name used in process of naming the result csv files. 
+        Overriden by classes that inherit ImageDataLoader.
+
+        Args:
+            db_name (str, optional): Image database name to assign and to customize csv file names.
+        """
         self.db_name = db_name
 
 
     def calculate_quality_values(self):
+        """Method that is used to collect all calculated quality values and time measurements.
+        """
 
         time_start = default_timer()
 
@@ -62,6 +78,17 @@ class IQAManager:
 
 
     def calculate_quality_from_measures(self, reference_image, deformed_image):
+        """Method that calls QualityMeasure child classes functionalities in order to get quality values.
+        Called from iterate_images method where it is executed with multiple processes by ProcessPoolExecutor object.
+
+        Args:
+            reference_image (ndarray): Reference image.
+            deformed_image (ndarray): Deformed image assessed in relation to passed reference image.
+
+        Returns:
+            tuple(list, list): Quality values and time execution measurements in lists 
+            where first list contains one value per each quality indicator and second list contains one time measurement per each quality indicator.
+        """
 
         times_list = []
         quality_values = []
@@ -76,11 +103,25 @@ class IQAManager:
 
 
     def iterate_images(self, reference_image, image_array, console_log=False):
+        """Calculates quality values for each deformed image in image_array argument 
+        in relation to reference image passed in reference_image argument 
+        and measures quality indicators time execution per each image.
+
+        Args:
+            reference_image (ndarray): Reference image.
+            image_array (ImageCollection): Deformed image collection assessed in relation to passed reference image.
+            console_log (bool, optional): Determines wheter the method should display all calculated quality values per distorted image. 
+            Defaults to False.
+
+        Returns:
+            tuple(list(list), list(list)): Quality values and time execution measurements in lists 
+            where first list contains multiple values per each quality indicator and second list contains multiple time measurements per each quality indicator.
+        """
         
         image_list = image_array.files
 
-        value_matrix = [[0 for x in range(1)] for y in range(len(self.quality_measures))]
-        times_matrix = [[0 for x in range(1)] for y in range(len(self.quality_measures))]  
+        value_matrix = [[0.0 for x in range(1)] for y in range(len(self.quality_measures))]
+        times_matrix = [[0.0 for x in range(1)] for y in range(len(self.quality_measures))]  
 
         with ProcessPoolExecutor() as executor:
             for i, results in enumerate(executor.map(self.calculate_quality_from_measures, repeat(reference_image), image_array)):
@@ -109,6 +150,9 @@ class IQAManager:
 
 
     def calculate_coefficients(self):
+        """Calculates correlation coefficient values with use of get_coefficients method, collects average time execution measurements 
+        and saves them to csv file.
+        """
 
         dfs_cc_list = []
 
@@ -132,6 +176,16 @@ class IQAManager:
 
 
     def get_coefficients(self, x, y):
+        """Calculates correlation coefficient values from x and y arguments.
+
+        Args:
+            x (array-like): List or array with float values.
+            y (array-like): List or array with float values.
+
+        Returns:
+            tuple(float, float, float): Pearson's linear correlation coefficient, Spearman's rank-order correlation coefficient 
+            and Kendall's rank order correlation coefficient.
+        """
         # Non-linear regression for PLCC
         x = safe_clip_nonfinite(x)
         y = safe_clip_nonfinite(y)
@@ -140,17 +194,17 @@ class IQAManager:
         betas, _ = curve_fit(logistic_regression_fun, x, y, p0=initial_guess, maxfev=20000)
         x_mapped = logistic_regression_fun(x, *betas)
 
-        # Pearson’s linear correlation coefficient
+        # Pearson's linear correlation coefficient
         pearson_coefficient, _ = pearsonr(x_mapped, y)
 
         pearson_coefficient = np.abs(np.round(pearson_coefficient, 3))
 
-        # Spearman’s rank-order correlation coefficient 
+        # Spearman's rank-order correlation coefficient 
         spearman_coefficient, _ = spearmanr(x, y)
 
         spearman_coefficient = np.abs(np.round(spearman_coefficient, 3))
 
-        # Kendall’s rank order correlation coefficient
+        # Kendall's rank order correlation coefficient
         kendall_coefficient, _ = kendalltau(x, y)
 
         kendall_coefficient = np.abs(np.round(kendall_coefficient, 3))
@@ -159,6 +213,14 @@ class IQAManager:
 
 
     def save_values_to_df(self, df, **kwargs):
+        """Adds new columns to existing df field (Pandas DataFrame object) from dictionary passed in **kwargs.
+
+        Args:
+            df (DataFrame): Field that contains results calculated by quality indicators.
+
+        Returns:
+            DataFrame: Modified and updated df argument.
+        """
 
         df.insert(len(df.columns), " ", " ", False)
 
@@ -169,7 +231,13 @@ class IQAManager:
         return df
 
 
-    def save_to_csv(self, df, csv_name):
+    def save_to_csv(self, df, csv_name: str):
+        """Saves results calculated by quality indicators to csv file with use of df field (Pandas DataFrame object).
+
+        Args:
+            df (DataFrame): Field that contains results calculated by quality indicators.
+            csv_name (str): Name applied to csv file.
+        """
 
         quality_measures_dictionary = {}
 
@@ -184,6 +252,11 @@ class IQAManager:
     
 
     def perform_iqa(self, csv_name=""):
+        """Template method called from ImageDataLoader subclass child objects that executes the rests of methods present in this class.
+
+        Args:
+            csv_name (str, optional): Name for csv file with calculated values by quality indicators. Defaults to "".
+        """
         for measure in self.quality_measures:
             measure.collected_values = []
             measure.time_values = []

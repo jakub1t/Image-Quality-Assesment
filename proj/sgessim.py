@@ -7,12 +7,24 @@ from quality_measure import QualityMeasure
 
 
 class SG_ESSIM(QualityMeasure):
+    """SG-ESSIM quality measure class. Uses translated MATLAB code.
+
+    Args:
+        QualityMeasure: Abstract parent class.
+    """
 
     def __init__(self, name="sg_essim"):
+        """Initializing method that allows to assign quality measure name
+        used in the process of saving results. Used here to add default value.
+
+        Args:
+            name (str, optional): Quality measure name. Defaults to "sg_essim".
+        """
         super().__init__(name)
 
 
     def calculate_quality(self, reference_image, deformed_image):
+        """Used to override parent method with SG-ESSIM functionality."""
         return self.calculate_sg_essim(reference_image, deformed_image)
 
 

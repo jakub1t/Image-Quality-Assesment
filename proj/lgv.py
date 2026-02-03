@@ -9,12 +9,24 @@ from quality_measure import QualityMeasure
 
 
 class LGV(QualityMeasure):
+    """LGV quality measure class. Uses translated MATLAB code.
+
+    Args:
+        QualityMeasure: Abstract parent class.
+    """
 
     def __init__(self, name="lgv"):
+        """Initializing method that allows to assign quality measure name
+        used in the process of saving results. Used here to add default value.
+
+        Args:
+            name (str, optional): Quality measure name. Defaults to "lgv".
+        """
         super().__init__(name)
 
 
     def calculate_quality(self, reference_image, deformed_image):
+        """Used to override parent method with LGV functionality."""
         return self.calculate_lgv(reference_image, deformed_image)
 
 

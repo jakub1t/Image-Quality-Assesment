@@ -9,12 +9,24 @@ from quality_measure import QualityMeasure
 
 
 class FFS(QualityMeasure):
+    """FFS quality measure class. Uses translated MATLAB code.
+
+    Args:
+        QualityMeasure: Abstract parent class.
+    """
 
     def __init__(self, name="ffs"):
+        """Initializing method that allows to assign quality measure name
+        used in the process of saving results. Used here to add default value.
+
+        Args:
+            name (str, optional): Quality measure name. Defaults to "ffs".
+        """
         super().__init__(name)
 
 
     def calculate_quality(self, reference_image, deformed_image):
+        """Used to override parent method with FFS functionality."""
         return self.calculate_ffs(reference_image, deformed_image)
 
 

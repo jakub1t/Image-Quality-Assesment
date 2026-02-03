@@ -4,17 +4,23 @@ from iqa_manager import IQAManager
 
 
 class ImageDataLoader(ABC, IQAManager):
+    """Abstract class that inherits core functionality of the program, allows to create separate ways to load an image database.
+
+    Args:
+        ABC: Python abc module helper class that provides a standard way to create an abstract class using inheritance.
+        IQAManager: Class with the core program functionality
+    """
 
     @abstractmethod
     def read_image_data(self):
-        """Read and preprocess (if necessary) data (MOS/DMOS) for images from image database."""
+        """Read and preprocess (if necessary) subjective scores (MOS/DMOS) for images from image database."""
         pass
     
     
     @abstractmethod
     def load_reference_images(self):
         """
-        Read reference images from image database into array field.
+        Read reference images from image database into list field.
         """
         pass
 
@@ -22,7 +28,7 @@ class ImageDataLoader(ABC, IQAManager):
     @abstractmethod
     def load_deformed_image_collections(self):
         """
-        Method to read deformed images from image database into array field that contains image collections.
+        Method to read deformed images from image database into list field that contains image collections.
         """
         pass
 
