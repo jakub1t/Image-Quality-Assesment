@@ -19,11 +19,11 @@ from lgv import LGV
 
 class IQAManager:
     """Probably the most important class that contains the core functionality of the program.
-    Iterates through images, calculates for them quality values, measures average time execution of quality indicators 
+    Iterates through images, calculates for them quality values, measures average time execution of quality indices
     and saves results to csv files.
 
     Returns:
-        - All calculated values by quality indicators in csv file format.
+        - All calculated values by quality indices in csv file format.
         - Calculated correlation coefficient values and average time measurements in csv file format.
     """
 
@@ -87,7 +87,7 @@ class IQAManager:
 
         Returns:
             tuple(list, list): Quality values and time execution measurements in lists 
-            where first list contains one value per each quality indicator and second list contains one time measurement per each quality indicator.
+            where first list contains one value per each quality indice and second list contains one time measurement per each quality indice.
         """
 
         times_list = []
@@ -105,7 +105,7 @@ class IQAManager:
     def iterate_images(self, reference_image, image_array, console_log=False):
         """Calculates quality values for each deformed image in image_array argument 
         in relation to reference image passed in reference_image argument 
-        and measures quality indicators time execution per each image.
+        and measures quality indices time execution per each image.
 
         Args:
             reference_image (ndarray): Reference image.
@@ -115,7 +115,7 @@ class IQAManager:
 
         Returns:
             tuple(list(list), list(list)): Quality values and time execution measurements in lists 
-            where first list contains multiple values per each quality indicator and second list contains multiple time measurements per each quality indicator.
+            where first list contains multiple values per each quality indice and second list contains multiple time measurements per each quality indice.
         """
         
         image_list = image_array.files
@@ -216,7 +216,7 @@ class IQAManager:
         """Adds new columns to existing df field (Pandas DataFrame object) from dictionary passed in **kwargs.
 
         Args:
-            df (DataFrame): Field that contains results calculated by quality indicators.
+            df (DataFrame): Field that contains results calculated by quality indices.
 
         Returns:
             DataFrame: Modified and updated df argument.
@@ -232,10 +232,10 @@ class IQAManager:
 
 
     def save_to_csv(self, df, csv_name: str):
-        """Saves results calculated by quality indicators to csv file with use of df field (Pandas DataFrame object).
+        """Saves results calculated by quality indices to csv file with use of df field (Pandas DataFrame object).
 
         Args:
-            df (DataFrame): Field that contains results calculated by quality indicators.
+            df (DataFrame): Field that contains results calculated by quality indices.
             csv_name (str): Name applied to csv file.
         """
 
@@ -255,7 +255,7 @@ class IQAManager:
         """Template method called from ImageDataLoader subclass child objects that executes the rests of methods present in this class.
 
         Args:
-            csv_name (str, optional): Name for csv file with calculated values by quality indicators. Defaults to "".
+            csv_name (str, optional): Name for csv file with calculated values by quality indices. Defaults to "".
         """
         for measure in self.quality_measures:
             measure.collected_values = []
