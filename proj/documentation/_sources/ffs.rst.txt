@@ -1,0 +1,7 @@
+ffs module
+==========
+
+.. automodule:: ffs
+   :members:
+   :show-inheritance:
+   :undoc-members:

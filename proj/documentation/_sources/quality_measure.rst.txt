@@ -1,0 +1,7 @@
+quality\_measure module
+=======================
+
+.. automodule:: quality_measure
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,7 @@
+nits\_db module
+===============
+
+.. automodule:: nits_db
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,404 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iqa_manager &mdash; New quality indicators for color image quality assessment v1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/code-tabs.css?v=1bc26e2f" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=e160b93e"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script src="../_static/code-tabs.js?v=c983d12e"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            New quality indicators for color image quality assessment
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">proj</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">New quality indicators for color image quality assessment</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">iqa_manager</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for iqa_manager</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">timeit</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_timer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProcessPoolExecutor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">repeat</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="kn">import</span> <span class="n">Series</span><span class="p">,</span> <span class="n">DataFrame</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="kn">import</span> <span class="n">concat</span> <span class="k">as</span> <span class="n">pdconcat</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">pearsonr</span><span class="p">,</span> <span class="n">spearmanr</span><span class="p">,</span> <span class="n">kendalltau</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">curve_fit</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">logistic_regression_fun</span><span class="p">,</span> <span class="n">safe_clip_nonfinite</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">quality_measure</span><span class="w"> </span><span class="kn">import</span> <span class="n">MSE</span><span class="p">,</span> <span class="n">PSNR</span><span class="p">,</span> <span class="n">SSIM</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sgessim</span><span class="w"> </span><span class="kn">import</span> <span class="n">SG_ESSIM</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ffs</span><span class="w"> </span><span class="kn">import</span> <span class="n">FFS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lgv</span><span class="w"> </span><span class="kn">import</span> <span class="n">LGV</span>
+
+
+<div class="viewcode-block" id="IQAManager">
+<a class="viewcode-back" href="../iqa_manager.html#iqa_manager.IQAManager">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">IQAManager</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Probably the most important class that contains the core functionality of the program.</span>
+<span class="sd">    Iterates through images, calculates for them quality values, measures average time execution of quality indices</span>
+<span class="sd">    and saves results to csv files.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        - All calculated values by quality indices in csv file format.</span>
+<span class="sd">        - Calculated correlation coefficient values and average time measurements in csv file format.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">number_of_reference_images</span> <span class="o">=</span> <span class="mi">9</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">mos_values</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">reference_images</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">deformed_image_collections</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">mse</span> <span class="o">=</span> <span class="n">MSE</span><span class="p">(</span><span class="s2">&quot;mse&quot;</span><span class="p">)</span>
+    <span class="n">psnr</span> <span class="o">=</span> <span class="n">PSNR</span><span class="p">(</span><span class="s2">&quot;psnr&quot;</span><span class="p">)</span>
+    <span class="n">ssim</span> <span class="o">=</span> <span class="n">SSIM</span><span class="p">(</span><span class="s2">&quot;ssim&quot;</span><span class="p">)</span>
+    <span class="n">sg_essim</span> <span class="o">=</span> <span class="n">SG_ESSIM</span><span class="p">(</span><span class="s2">&quot;sg_essim&quot;</span><span class="p">)</span>
+    <span class="n">ffs</span> <span class="o">=</span> <span class="n">FFS</span><span class="p">(</span><span class="s2">&quot;ffs&quot;</span><span class="p">)</span>
+    <span class="n">lgv</span> <span class="o">=</span> <span class="n">LGV</span><span class="p">(</span><span class="s2">&quot;lgv&quot;</span><span class="p">)</span>
+    <span class="n">quality_measures</span> <span class="o">=</span> <span class="p">[</span><span class="n">mse</span><span class="p">,</span> <span class="n">psnr</span><span class="p">,</span> <span class="n">ssim</span><span class="p">,</span> <span class="n">sg_essim</span><span class="p">,</span> <span class="n">ffs</span><span class="p">,</span> <span class="n">lgv</span><span class="p">]</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializing method that allows to assign image database name used in process of naming the result csv files. </span>
+<span class="sd">        Overriden by classes that inherit ImageDataLoader.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            db_name (str, optional): Image database name to assign and to customize csv file names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_name</span> <span class="o">=</span> <span class="n">db_name</span>
+
+
+<div class="viewcode-block" id="IQAManager.calculate_quality_values">
+<a class="viewcode-back" href="../iqa_manager.html#iqa_manager.IQAManager.calculate_quality_values">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_quality_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method that is used to collect all calculated quality values and time measurements.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">time_start</span> <span class="o">=</span> <span class="n">default_timer</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">image_collection</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deformed_image_collections</span><span class="p">):</span>
+
+            <span class="n">measures_matrix</span><span class="p">,</span> <span class="n">times_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iterate_images</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_images</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">image_collection</span><span class="p">,</span> <span class="n">console_log</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">measure</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quality_measures</span><span class="p">):</span>
+                <span class="n">measure</span><span class="o">.</span><span class="n">collected_values</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">measures_matrix</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                <span class="n">measure</span><span class="o">.</span><span class="n">time_values</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">times_matrix</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+        <span class="n">time_end</span> <span class="o">=</span> <span class="n">default_timer</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Time elapsed for processing: </span><span class="si">{</span><span class="n">time_end</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">time_start</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">measure</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_measures</span><span class="p">:</span>
+            <span class="n">measure</span><span class="o">.</span><span class="n">average_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">measure</span><span class="o">.</span><span class="n">time_values</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&gt;&gt;&gt; </span><span class="si">{</span><span class="n">measure</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2"> average time execution: </span><span class="si">{</span><span class="n">measure</span><span class="o">.</span><span class="n">average_time</span><span class="si">}</span><span class="s2"> seconds &lt;&lt;&lt;&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="IQAManager.calculate_quality_from_measures">
+<a class="viewcode-back" href="../iqa_manager.html#iqa_manager.IQAManager.calculate_quality_from_measures">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_quality_from_measures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_image</span><span class="p">,</span> <span class="n">deformed_image</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method that calls QualityMeasure child classes functionalities in order to get quality values.</span>
+<span class="sd">        Called from iterate_images method where it is executed with multiple processes by ProcessPoolExecutor object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            reference_image (ndarray): Reference image.</span>
+<span class="sd">            deformed_image (ndarray): Deformed image assessed in relation to passed reference image.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple(list, list): Quality values and time execution measurements in lists </span>
+<span class="sd">            where first list contains one value per each quality indice and second list contains one time measurement per each quality indice.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">times_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">quality_values</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">measure</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_measures</span><span class="p">:</span>
+            <span class="n">time_start</span> <span class="o">=</span> <span class="n">default_timer</span><span class="p">()</span>
+            <span class="n">quality_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">measure</span><span class="o">.</span><span class="n">calculate_quality</span><span class="p">(</span><span class="n">reference_image</span><span class="p">,</span> <span class="n">deformed_image</span><span class="p">))</span>
+            <span class="n">time_end</span> <span class="o">=</span> <span class="n">default_timer</span><span class="p">()</span>
+            <span class="n">times_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time_end</span> <span class="o">-</span> <span class="n">time_start</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">quality_values</span><span class="p">,</span> <span class="n">times_list</span></div>
+
+
+
+<div class="viewcode-block" id="IQAManager.iterate_images">
+<a class="viewcode-back" href="../iqa_manager.html#iqa_manager.IQAManager.iterate_images">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">iterate_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_image</span><span class="p">,</span> <span class="n">image_array</span><span class="p">,</span> <span class="n">console_log</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates quality values for each deformed image in image_array argument </span>
+<span class="sd">        in relation to reference image passed in reference_image argument </span>
+<span class="sd">        and measures quality indices time execution per each image.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            reference_image (ndarray): Reference image.</span>
+<span class="sd">            image_array (ImageCollection): Deformed image collection assessed in relation to passed reference image.</span>
+<span class="sd">            console_log (bool, optional): Determines wheter the method should display all calculated quality values per distorted image. </span>
+<span class="sd">            Defaults to False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple(list(list), list(list)): Quality values and time execution measurements in lists </span>
+<span class="sd">            where first list contains multiple values per each quality indice and second list contains multiple time measurements per each quality indice.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">image_list</span> <span class="o">=</span> <span class="n">image_array</span><span class="o">.</span><span class="n">files</span>
+
+        <span class="n">value_matrix</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">0.0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quality_measures</span><span class="p">))]</span>
+        <span class="n">times_matrix</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">0.0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quality_measures</span><span class="p">))]</span>  
+
+        <span class="k">with</span> <span class="n">ProcessPoolExecutor</span><span class="p">()</span> <span class="k">as</span> <span class="n">executor</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">results</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">executor</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calculate_quality_from_measures</span><span class="p">,</span> <span class="n">repeat</span><span class="p">(</span><span class="n">reference_image</span><span class="p">),</span> <span class="n">image_array</span><span class="p">)):</span>
+
+                <span class="n">times_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">results</span><span class="p">)</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">time</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">times_list</span><span class="p">):</span>
+                    <span class="n">times_matrix</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+
+                <span class="c1"># results = results[:-1]</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+                    <span class="n">value_matrix</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">console_log</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="c1"># print(results)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Image: </span><span class="si">{</span><span class="n">image_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">measure</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quality_measures</span><span class="p">):</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">measure</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                    
+        <span class="n">value_matrix</span> <span class="o">=</span> <span class="p">[</span><span class="n">v_list</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="k">for</span> <span class="n">v_list</span> <span class="ow">in</span> <span class="n">value_matrix</span><span class="p">]</span>
+        <span class="n">times_matrix</span> <span class="o">=</span> <span class="p">[</span><span class="n">v_list</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="k">for</span> <span class="n">v_list</span> <span class="ow">in</span> <span class="n">times_matrix</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">value_matrix</span><span class="p">,</span> <span class="n">times_matrix</span></div>
+
+
+
+<div class="viewcode-block" id="IQAManager.calculate_coefficients">
+<a class="viewcode-back" href="../iqa_manager.html#iqa_manager.IQAManager.calculate_coefficients">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_coefficients</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates correlation coefficient values with use of get_coefficients method, collects average time execution measurements </span>
+<span class="sd">        and saves them to csv file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">dfs_cc_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">measure</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_measures</span><span class="p">:</span>
+            
+            <span class="n">plcc</span><span class="p">,</span> <span class="n">srocc</span><span class="p">,</span> <span class="n">krocc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_coefficients</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mos_values</span><span class="p">,</span> <span class="n">measure</span><span class="o">.</span><span class="n">collected_values</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;=======================================================&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;=======================</span><span class="si">{</span><span class="n">measure</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">========================&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;=======================================================</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;===================</span><span class="se">\n</span><span class="s2">PLCC: </span><span class="si">{</span><span class="n">plcc</span><span class="si">}</span><span class="se">\n</span><span class="s2">===================</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;===================</span><span class="se">\n</span><span class="s2">SROCC: </span><span class="si">{</span><span class="n">srocc</span><span class="si">}</span><span class="se">\n</span><span class="s2">===================</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;===================</span><span class="se">\n</span><span class="s2">KROCC: </span><span class="si">{</span><span class="n">krocc</span><span class="si">}</span><span class="se">\n</span><span class="s2">===================</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">dfs_cc_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="n">plcc</span><span class="p">,</span> <span class="n">srocc</span><span class="p">,</span> <span class="n">krocc</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">measure</span><span class="o">.</span><span class="n">average_time</span><span class="p">,</span> <span class="mi">6</span><span class="p">)],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">measure</span><span class="o">.</span><span class="n">name</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;plcc&quot;</span><span class="p">,</span> <span class="s2">&quot;srocc&quot;</span><span class="p">,</span> <span class="s2">&quot;krocc&quot;</span><span class="p">,</span> <span class="s2">&quot;average time execution [s]&quot;</span><span class="p">]))</span>
+
+        <span class="n">dfs_cc</span> <span class="o">=</span> <span class="n">pdconcat</span><span class="p">(</span><span class="n">dfs_cc_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">dfs_cc</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;./csv_results/cc_result_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">db_name</span><span class="si">}</span><span class="s2">.csv&quot;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="IQAManager.get_coefficients">
+<a class="viewcode-back" href="../iqa_manager.html#iqa_manager.IQAManager.get_coefficients">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_coefficients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates correlation coefficient values from x and y arguments.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x (array-like): List or array with float values.</span>
+<span class="sd">            y (array-like): List or array with float values.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple(float, float, float): Pearson&#39;s linear correlation coefficient, Spearman&#39;s rank-order correlation coefficient </span>
+<span class="sd">            and Kendall&#39;s rank order correlation coefficient.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Non-linear regression for PLCC</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">safe_clip_nonfinite</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">safe_clip_nonfinite</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">b1_0</span> <span class="o">=</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+        <span class="n">initial_guess</span> <span class="o">=</span> <span class="p">[</span><span class="n">b1_0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">y</span><span class="p">)]</span>
+        <span class="n">betas</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">curve_fit</span><span class="p">(</span><span class="n">logistic_regression_fun</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">p0</span><span class="o">=</span><span class="n">initial_guess</span><span class="p">,</span> <span class="n">maxfev</span><span class="o">=</span><span class="mi">20000</span><span class="p">)</span>
+        <span class="n">x_mapped</span> <span class="o">=</span> <span class="n">logistic_regression_fun</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="n">betas</span><span class="p">)</span>
+
+        <span class="c1"># Pearson&#39;s linear correlation coefficient</span>
+        <span class="n">pearson_coefficient</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">pearsonr</span><span class="p">(</span><span class="n">x_mapped</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+        <span class="n">pearson_coefficient</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">pearson_coefficient</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
+        <span class="c1"># Spearman&#39;s rank-order correlation coefficient </span>
+        <span class="n">spearman_coefficient</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">spearmanr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+        <span class="n">spearman_coefficient</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">spearman_coefficient</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
+        <span class="c1"># Kendall&#39;s rank order correlation coefficient</span>
+        <span class="n">kendall_coefficient</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">kendalltau</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+        <span class="n">kendall_coefficient</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">kendall_coefficient</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">pearson_coefficient</span><span class="p">,</span> <span class="n">spearman_coefficient</span><span class="p">,</span> <span class="n">kendall_coefficient</span></div>
+
+
+
+<div class="viewcode-block" id="IQAManager.save_values_to_df">
+<a class="viewcode-back" href="../iqa_manager.html#iqa_manager.IQAManager.save_values_to_df">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_values_to_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds new columns to existing df field (Pandas DataFrame object) from dictionary passed in kwargs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            df (DataFrame): Field that contains results calculated by quality indices.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            DataFrame: Modified and updated df argument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">df</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span> <span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span> <span class="n">key</span><span class="p">,</span> <span class="s2">&quot;NaN&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="n">df</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">df</span></div>
+
+
+
+<div class="viewcode-block" id="IQAManager.save_to_csv">
+<a class="viewcode-back" href="../iqa_manager.html#iqa_manager.IQAManager.save_to_csv">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_to_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">csv_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Saves results calculated by quality indices to csv file with use of df field (Pandas DataFrame object).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            df (DataFrame): Field that contains results calculated by quality indices.</span>
+<span class="sd">            csv_name (str): Name applied to csv file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">quality_measures_dictionary</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">measure</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_measures</span><span class="p">:</span>
+            <span class="n">quality_measures_dictionary</span><span class="p">[</span><span class="n">measure</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">measure</span><span class="o">.</span><span class="n">collected_values</span>
+
+        <span class="n">new_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_values_to_df</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="o">**</span><span class="n">quality_measures_dictionary</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataframe after iteration:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">new_df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">new_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;./csv_results/</span><span class="si">{</span><span class="n">csv_name</span><span class="si">}</span><span class="s2">.csv&quot;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+    
+
+<div class="viewcode-block" id="IQAManager.perform_iqa">
+<a class="viewcode-back" href="../iqa_manager.html#iqa_manager.IQAManager.perform_iqa">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">perform_iqa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">csv_name</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Template method called from ImageDataLoader subclass child objects that executes the rests of methods present in this class.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            csv_name (str, optional): Name for csv file with calculated values by quality indices. Defaults to &quot;&quot;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">measure</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_measures</span><span class="p">:</span>
+            <span class="n">measure</span><span class="o">.</span><span class="n">collected_values</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">measure</span><span class="o">.</span><span class="n">time_values</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">measure</span><span class="o">.</span><span class="n">average_time</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculate_quality_values</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculate_coefficients</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">csv_name</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_to_csv</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="n">csv_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;result_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">db_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_to_csv</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="n">csv_name</span><span class="o">=</span><span class="n">csv_name</span><span class="p">)</span></div>
+</div>
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Jakub Tomczak.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

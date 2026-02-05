@@ -31,6 +31,7 @@ class FFS(QualityMeasure):
 
 
     def spectral_residue_saliency(self, image):
+        """Calculates spectral residual for an image."""
 
         scale = 0.25
         ave_kernel_size = 3
@@ -58,6 +59,7 @@ class FFS(QualityMeasure):
 
 
     def calculate_ffs(self, reference_image, deformaed_image):
+        """Calculates FFS final score."""
         
         img1 = np.float64(reference_image)
         img2 = np.float64(deformaed_image)

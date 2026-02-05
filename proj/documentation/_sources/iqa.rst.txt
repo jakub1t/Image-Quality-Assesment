@@ -1,0 +1,7 @@
+iqa module
+==========
+
+.. automodule:: iqa
+   :members:
+   :show-inheritance:
+   :undoc-members:

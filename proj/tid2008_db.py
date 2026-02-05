@@ -7,10 +7,10 @@ from image_data_loader import ImageDataLoader
 
 class TID2008_DB(ImageDataLoader):
     """TID2008 image database object that implements ImageDataLoader abstract class.
-    Overrides three parent methods:
-    - read_image_data
-    - load_reference_images
-    - load_deformed_image_collections
+    Overrides three parent methods:\n
+    - read_image_data,\n
+    - load_reference_images,\n
+    - load_deformed_image_collections.\n
 
     Args:
         ImageDataLoader : Abstract parent class with the core functionality.

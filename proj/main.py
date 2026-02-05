@@ -8,6 +8,8 @@ from htid_db import HTID_DB
 
 
 def main():
+    """Main function for the program with infinite loop."""
+    
     image_databases = [NITS_DB(), HTID_DB(), KADID10K_DB(), TID2013_DB(), TID2008_DB()]
     num_of_available_dbs = len(image_databases)
 

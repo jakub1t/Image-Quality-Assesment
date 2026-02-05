@@ -1,0 +1,357 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iqa_manager module &mdash; New quality indicators for color image quality assessment v1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/code-tabs.css?v=1bc26e2f" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e160b93e"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script src="_static/code-tabs.js?v=c983d12e"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="kadid10k_db module" href="kadid10k_db.html" />
+    <link rel="prev" title="iqa module" href="iqa.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            New quality indicators for color image quality assessment
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">proj</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ffs.html">ffs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="htid_db.html">htid_db module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="image_data_loader.html">image_data_loader module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iqa.html">iqa module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">iqa_manager module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#iqa_manager.IQAManager"><code class="docutils literal notranslate"><span class="pre">IQAManager</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.calculate_coefficients"><code class="docutils literal notranslate"><span class="pre">IQAManager.calculate_coefficients()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.calculate_quality_from_measures"><code class="docutils literal notranslate"><span class="pre">IQAManager.calculate_quality_from_measures()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.calculate_quality_values"><code class="docutils literal notranslate"><span class="pre">IQAManager.calculate_quality_values()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.get_coefficients"><code class="docutils literal notranslate"><span class="pre">IQAManager.get_coefficients()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.iterate_images"><code class="docutils literal notranslate"><span class="pre">IQAManager.iterate_images()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.perform_iqa"><code class="docutils literal notranslate"><span class="pre">IQAManager.perform_iqa()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.save_to_csv"><code class="docutils literal notranslate"><span class="pre">IQAManager.save_to_csv()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.save_values_to_df"><code class="docutils literal notranslate"><span class="pre">IQAManager.save_values_to_df()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.deformed_image_collections"><code class="docutils literal notranslate"><span class="pre">IQAManager.deformed_image_collections</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.df"><code class="docutils literal notranslate"><span class="pre">IQAManager.df</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.ffs"><code class="docutils literal notranslate"><span class="pre">IQAManager.ffs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.lgv"><code class="docutils literal notranslate"><span class="pre">IQAManager.lgv</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.mos_values"><code class="docutils literal notranslate"><span class="pre">IQAManager.mos_values</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.mse"><code class="docutils literal notranslate"><span class="pre">IQAManager.mse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.number_of_reference_images"><code class="docutils literal notranslate"><span class="pre">IQAManager.number_of_reference_images</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.psnr"><code class="docutils literal notranslate"><span class="pre">IQAManager.psnr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.quality_measures"><code class="docutils literal notranslate"><span class="pre">IQAManager.quality_measures</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.reference_images"><code class="docutils literal notranslate"><span class="pre">IQAManager.reference_images</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.sg_essim"><code class="docutils literal notranslate"><span class="pre">IQAManager.sg_essim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iqa_manager.IQAManager.ssim"><code class="docutils literal notranslate"><span class="pre">IQAManager.ssim</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kadid10k_db.html">kadid10k_db module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lgv.html">lgv module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html">main module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nits_db.html">nits_db module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quality_measure.html">quality_measure module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sgessim.html">sgessim module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tid2008_db.html">tid2008_db module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tid2013_db.html">tid2013_db module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">utils module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">New quality indicators for color image quality assessment</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">proj</a></li>
+      <li class="breadcrumb-item active">iqa_manager module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/iqa_manager.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-iqa_manager">
+<span id="iqa-manager-module"></span><h1>iqa_manager module<a class="headerlink" href="#module-iqa_manager" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">iqa_manager.</span></span><span class="sig-name descname"><span class="pre">IQAManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iqa_manager.html#IQAManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iqa_manager.IQAManager" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Probably the most important class that contains the core functionality of the program.
+Iterates through images, calculates for them quality values, measures average time execution of quality indices
+and saves results to csv files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>All calculated values by quality indices in csv file format.</p></li>
+<li><p>Calculated correlation coefficient values and average time measurements in csv file format.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.calculate_coefficients">
+<span class="sig-name descname"><span class="pre">calculate_coefficients</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iqa_manager.html#IQAManager.calculate_coefficients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iqa_manager.IQAManager.calculate_coefficients" title="Link to this definition"></a></dt>
+<dd><p>Calculates correlation coefficient values with use of get_coefficients method, collects average time execution measurements
+and saves them to csv file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.calculate_quality_from_measures">
+<span class="sig-name descname"><span class="pre">calculate_quality_from_measures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deformed_image</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iqa_manager.html#IQAManager.calculate_quality_from_measures"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iqa_manager.IQAManager.calculate_quality_from_measures" title="Link to this definition"></a></dt>
+<dd><p>Method that calls QualityMeasure child classes functionalities in order to get quality values.
+Called from iterate_images method where it is executed with multiple processes by ProcessPoolExecutor object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reference_image</strong> (<em>ndarray</em>) – Reference image.</p></li>
+<li><p><strong>deformed_image</strong> (<em>ndarray</em>) – Deformed image assessed in relation to passed reference image.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Quality values and time execution measurements in lists
+where first list contains one value per each quality indice and second list contains one time measurement per each quality indice.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple(list, list)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.calculate_quality_values">
+<span class="sig-name descname"><span class="pre">calculate_quality_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iqa_manager.html#IQAManager.calculate_quality_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iqa_manager.IQAManager.calculate_quality_values" title="Link to this definition"></a></dt>
+<dd><p>Method that is used to collect all calculated quality values and time measurements.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.get_coefficients">
+<span class="sig-name descname"><span class="pre">get_coefficients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iqa_manager.html#IQAManager.get_coefficients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iqa_manager.IQAManager.get_coefficients" title="Link to this definition"></a></dt>
+<dd><p>Calculates correlation coefficient values from x and y arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>array-like</em>) – List or array with float values.</p></li>
+<li><p><strong>y</strong> (<em>array-like</em>) – List or array with float values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pearson’s linear correlation coefficient, Spearman’s rank-order correlation coefficient
+and Kendall’s rank order correlation coefficient.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple(float, float, float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.iterate_images">
+<span class="sig-name descname"><span class="pre">iterate_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">console_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iqa_manager.html#IQAManager.iterate_images"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iqa_manager.IQAManager.iterate_images" title="Link to this definition"></a></dt>
+<dd><p>Calculates quality values for each deformed image in image_array argument
+in relation to reference image passed in reference_image argument
+and measures quality indices time execution per each image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reference_image</strong> (<em>ndarray</em>) – Reference image.</p></li>
+<li><p><strong>image_array</strong> (<em>ImageCollection</em>) – Deformed image collection assessed in relation to passed reference image.</p></li>
+<li><p><strong>console_log</strong> (<em>bool</em><em>, </em><em>optional</em>) – Determines wheter the method should display all calculated quality values per distorted image.</p></li>
+<li><p><strong>False.</strong> (<em>Defaults to</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Quality values and time execution measurements in lists
+where first list contains multiple values per each quality indice and second list contains multiple time measurements per each quality indice.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple(list(list), list(list))</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.perform_iqa">
+<span class="sig-name descname"><span class="pre">perform_iqa</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">csv_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iqa_manager.html#IQAManager.perform_iqa"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iqa_manager.IQAManager.perform_iqa" title="Link to this definition"></a></dt>
+<dd><p>Template method called from ImageDataLoader subclass child objects that executes the rests of methods present in this class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>csv_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for csv file with calculated values by quality indices. Defaults to “”.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.save_to_csv">
+<span class="sig-name descname"><span class="pre">save_to_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">csv_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iqa_manager.html#IQAManager.save_to_csv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iqa_manager.IQAManager.save_to_csv" title="Link to this definition"></a></dt>
+<dd><p>Saves results calculated by quality indices to csv file with use of df field (Pandas DataFrame object).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>DataFrame</em>) – Field that contains results calculated by quality indices.</p></li>
+<li><p><strong>csv_name</strong> (<em>str</em>) – Name applied to csv file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.save_values_to_df">
+<span class="sig-name descname"><span class="pre">save_values_to_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iqa_manager.html#IQAManager.save_values_to_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iqa_manager.IQAManager.save_values_to_df" title="Link to this definition"></a></dt>
+<dd><p>Adds new columns to existing df field (Pandas DataFrame object) from dictionary passed in kwargs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>DataFrame</em>) – Field that contains results calculated by quality indices.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Modified and updated df argument.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.deformed_image_collections">
+<span class="sig-name descname"><span class="pre">deformed_image_collections</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#iqa_manager.IQAManager.deformed_image_collections" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.df">
+<span class="sig-name descname"><span class="pre">df</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#iqa_manager.IQAManager.df" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.ffs">
+<span class="sig-name descname"><span class="pre">ffs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;ffs.FFS</span> <span class="pre">object&gt;</span></span><a class="headerlink" href="#iqa_manager.IQAManager.ffs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.lgv">
+<span class="sig-name descname"><span class="pre">lgv</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;lgv.LGV</span> <span class="pre">object&gt;</span></span><a class="headerlink" href="#iqa_manager.IQAManager.lgv" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.mos_values">
+<span class="sig-name descname"><span class="pre">mos_values</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#iqa_manager.IQAManager.mos_values" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.mse">
+<span class="sig-name descname"><span class="pre">mse</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;quality_measure.MSE</span> <span class="pre">object&gt;</span></span><a class="headerlink" href="#iqa_manager.IQAManager.mse" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.number_of_reference_images">
+<span class="sig-name descname"><span class="pre">number_of_reference_images</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">9</span></span><a class="headerlink" href="#iqa_manager.IQAManager.number_of_reference_images" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.psnr">
+<span class="sig-name descname"><span class="pre">psnr</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;quality_measure.PSNR</span> <span class="pre">object&gt;</span></span><a class="headerlink" href="#iqa_manager.IQAManager.psnr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.quality_measures">
+<span class="sig-name descname"><span class="pre">quality_measures</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[&lt;quality_measure.MSE</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;quality_measure.PSNR</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;quality_measure.SSIM</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;sgessim.SG_ESSIM</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;ffs.FFS</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;lgv.LGV</span> <span class="pre">object&gt;]</span></span><a class="headerlink" href="#iqa_manager.IQAManager.quality_measures" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.reference_images">
+<span class="sig-name descname"><span class="pre">reference_images</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#iqa_manager.IQAManager.reference_images" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.sg_essim">
+<span class="sig-name descname"><span class="pre">sg_essim</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;sgessim.SG_ESSIM</span> <span class="pre">object&gt;</span></span><a class="headerlink" href="#iqa_manager.IQAManager.sg_essim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="iqa_manager.IQAManager.ssim">
+<span class="sig-name descname"><span class="pre">ssim</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;quality_measure.SSIM</span> <span class="pre">object&gt;</span></span><a class="headerlink" href="#iqa_manager.IQAManager.ssim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="iqa.html" class="btn btn-neutral float-left" title="iqa module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="kadid10k_db.html" class="btn btn-neutral float-right" title="kadid10k_db module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Jakub Tomczak.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+sgessim module
+==============
+
+.. automodule:: sgessim
+   :members:
+   :show-inheritance:
+   :undoc-members:

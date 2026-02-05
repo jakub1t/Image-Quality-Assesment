@@ -1,0 +1,7 @@
+kadid10k\_db module
+===================
+
+.. automodule:: kadid10k_db
+   :members:
+   :show-inheritance:
+   :undoc-members:

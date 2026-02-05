@@ -213,7 +213,7 @@ class IQAManager:
 
 
     def save_values_to_df(self, df, **kwargs):
-        """Adds new columns to existing df field (Pandas DataFrame object) from dictionary passed in **kwargs.
+        """Adds new columns to existing df field (Pandas DataFrame object) from dictionary passed in kwargs.
 
         Args:
             df (DataFrame): Field that contains results calculated by quality indices.

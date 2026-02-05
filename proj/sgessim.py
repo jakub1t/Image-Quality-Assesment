@@ -29,6 +29,7 @@ class SG_ESSIM(QualityMeasure):
 
 
     def preprocess(self, reference_image, deformed_image):
+        """Prepares images for processing."""
 
         ref_image = reference_image.astype(np.float64)
         def_image = deformed_image.astype(np.float64)
@@ -41,6 +42,7 @@ class SG_ESSIM(QualityMeasure):
 
 
     def automatic_downsampling(self, reference_image, deformed_image):
+        """Downsamples reference and distorted images."""
 
         n_rows, n_cols = reference_image.shape
 
@@ -60,6 +62,7 @@ class SG_ESSIM(QualityMeasure):
 
 
     def get_directional_gradient(self, image):
+        """Returns directional gradient for an image. Passed image must go through 'preprocess' and 'automatic_downsampling' methods."""
 
         n_rows, n_cols = image.shape
 
@@ -94,6 +97,7 @@ class SG_ESSIM(QualityMeasure):
 
 
     def calculate_sg_essim(self, reference_image, deformed_image, h = 0.5, L = 255, K = 200):
+        """Calculates SG-ESSIM final score."""
 
         reference_image, deformed_image = self.preprocess(reference_image, deformed_image)
         reference_image, deformed_image = self.automatic_downsampling(reference_image, deformed_image)

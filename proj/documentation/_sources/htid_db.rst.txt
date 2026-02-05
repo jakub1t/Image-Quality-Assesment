@@ -1,0 +1,7 @@
+htid\_db module
+===============
+
+.. automodule:: htid_db
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,7 @@
+iqa\_manager module
+===================
+
+.. automodule:: iqa_manager
+   :members:
+   :show-inheritance:
+   :undoc-members:

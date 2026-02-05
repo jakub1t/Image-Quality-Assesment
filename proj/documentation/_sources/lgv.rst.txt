@@ -1,0 +1,7 @@
+lgv module
+==========
+
+.. automodule:: lgv
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -31,6 +31,7 @@ class LGV(QualityMeasure):
 
 
     def preprocess(self, reference_image, deformed_image):
+        """Prepares images for processing."""
 
         ref_image = reference_image.astype(np.float64)
         def_image = deformed_image.astype(np.float64)
@@ -43,6 +44,7 @@ class LGV(QualityMeasure):
 
 
     def automatic_downsampling(self, reference_image, deformed_image):
+        """Downsamples reference and distorted images."""
 
         n_rows, n_cols = reference_image.shape
 
@@ -62,6 +64,7 @@ class LGV(QualityMeasure):
 
 
     def fgl_deriv_maxtrix_norm(self, a, Y, h):
+        """Returns Grunwald-Letnikov derivative of an image. Passed image must go through 'preprocess' and 'automatic_downsampling' methods."""
         Y = np.asarray(Y, dtype=float)
 
         # ---------- Horizontal ----------
@@ -102,6 +105,7 @@ class LGV(QualityMeasure):
 
 
     def get_local_variation(self, ref_img, def_img, T):
+        """Measures differences between reference and distorted images on local level using gradients. Passed images must go through 'preprocess' and 'automatic_downsampling' methods."""
         Sx = np.array([[3,  0, -3],
                    [10, 0, -10],
                    [3,  0, -3]], dtype=np.float64) / 16.0
@@ -122,6 +126,7 @@ class LGV(QualityMeasure):
 
 
     def get_global_variation(self, ref_img, def_img, args):
+        """Measures differences between reference and distorted images on global level using Grunwald-Letnikov derivative. Passed images must go through 'preprocess' and 'automatic_downsampling' methods."""
 
         a, h, C = args
 
@@ -134,6 +139,7 @@ class LGV(QualityMeasure):
 
 
     def calculate_lgv(self, reference_image, deformed_image):
+        """Calculates LGV final score."""
         ref_img, def_img = self.preprocess(reference_image, deformed_image)
 
         ref_img, def_img = self.automatic_downsampling(ref_img, def_img)

@@ -1,0 +1,7 @@
+tid2013\_db module
+==================
+
+.. automodule:: tid2013_db
+   :members:
+   :show-inheritance:
+   :undoc-members:
